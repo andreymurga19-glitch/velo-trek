@@ -489,11 +489,13 @@ async function handleFile(file) {
         body: JSON.stringify({imageBase64: b64, mimeType: mime})
       });
       const parsed = await resp.json();
-      if(parsed.time_min != null) document.getElementById('cTime').value = parsed.time_min;
-      if(parsed.km != null) document.getElementById('cKm').value = parsed.km;
-      if(parsed.kcal != null) document.getElementById('cCal').value = parsed.kcal;
-      if(parsed.speed != null) document.getElementById('cSpeed').value = parsed.speed;
-      showToast('✅ AI зчитав показники!');
+      console.log('AI parsed:', JSON.stringify(parsed));
+      if(parsed.time_min != null && parsed.time_min !== undefined) document.getElementById('cTime').value = parsed.time_min;
+      if(parsed.km != null && parsed.km !== undefined) document.getElementById('cKm').value = parsed.km;
+      if(parsed.kcal != null && parsed.kcal !== undefined) document.getElementById('cCal').value = parsed.kcal;
+      if(parsed.speed != null && parsed.speed !== undefined) document.getElementById('cSpeed').value = parsed.speed;
+      const filled = [parsed.time_min, parsed.km, parsed.kcal, parsed.speed].filter(v => v != null).length;
+      showToast(filled > 0 ? '✅ AI зчитав показники!' : '⚠️ AI не знайшов показників — введи вручну', filled === 0);
     } catch(err) {
       showToast('AI не зміг прочитати — введи вручну', true);
     } finally {
