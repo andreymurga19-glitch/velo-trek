@@ -19,34 +19,35 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents: [{ parts: [
           { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
-          { text: 'Read this exercise bike display. Return ONLY this JSON with no other text: {"time_min":30,"km":15.03,"speed":26.1,"kcal":327} - time_min is ZEIT minutes only (integer), km is DISTANZ (float), speed is KM/H (float), kcal is KILOJOULE/4.184 rounded (integer). Use null if not visible.' }
+          { text: 'Read this exercise bike display. Return ONLY this JSON with no other text: {"time_min":30,"km":15.03,"speed":26.1,"kcal":327}' }
         ]}],
-        generationConfig: { temperature: 0, maxOutputTokens: 60 }
+        generationConfig: { temperature: 0, maxOutputTokens: 200 }
       })
     });
 
     const data = await response.json();
+    console.log('status:', response.status);
+    console.log('parts count:', data.candidates?.[0]?.content?.parts?.length);
+    
+    // Log ALL parts
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    parts.forEach((p, i) => {
+      console.log(`part[${i}] type:`, p.thought ? 'thought' : 'text', 'len:', (p.text||'').length, 'val:', (p.text||'').slice(0,100));
+    });
 
-    if (!response.ok) {
-      return res.status(500).json({ error: data.error?.message || 'Gemini error' });
-    }
+    // Find text part (skip thought parts)
+    const textPart = parts.find(p => !p.thought && p.text);
+    const text = (textPart?.text || '').trim();
+    console.log('final text:', text.slice(0, 200));
 
-    const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
-    console.log('text length:', text.length, 'first100:', text.slice(0, 100));
+    if (!text) return res.status(500).json({ error: 'Empty text from Gemini', parts: parts.map(p => ({thought: p.thought, len: (p.text||'').length})) });
 
-    // Extract JSON object
     const start = text.indexOf('{');
     const end = text.lastIndexOf('}');
-    if (start === -1 || end === -1) {
-      return res.status(500).json({ error: 'No JSON braces found', text: text.slice(0, 200) });
-    }
+    if (start === -1 || end === -1) return res.status(500).json({ error: 'No JSON', text });
 
-    const jsonStr = text.slice(start, end + 1);
-    console.log('jsonStr:', jsonStr);
+    const raw = JSON.parse(text.slice(start, end + 1));
 
-    const raw = JSON.parse(jsonStr);
-
-    // Fix time if string like "30:01"
     let time_min = raw.time_min;
     if (typeof time_min === 'string' && time_min.includes(':')) {
       time_min = parseInt(time_min.split(':')[0]);
@@ -54,7 +55,6 @@ export default async function handler(req, res) {
       time_min = time_min != null ? parseInt(time_min) : null;
     }
 
-    // Fix kcal if raw kJ
     let kcal = raw.kcal;
     if (kcal != null && kcal > 500) kcal = Math.round(kcal / 4.184);
 
