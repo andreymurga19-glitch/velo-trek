@@ -12,10 +12,6 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not set' });
 
-    const prompt = `Це фото з велотренажера sportsline. На дисплеї є показники: ZEIT (час), DISTANZ (км), KM/H (швидкість), KILOJOULE (енергія). Поверни ТІЛЬКИ JSON без пояснень та без markdown backticks:
-{"time_min": <хвилини int або null>, "km": <кілометри float або null>, "kcal": <kilojoule * 0.239 rounded int або null>, "speed": <km/h float або null>}
-Час у форматі мм:сс — бери тільки хвилини. Наприклад 30:01 = 30, 11:01 = 11.`;
-
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     
     const response = await fetch(url, {
@@ -25,28 +21,36 @@ export default async function handler(req, res) {
         contents: [{
           parts: [
             { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
-            { text: prompt }
+            { text: 'Look at this exercise bike display. Find these values: ZEIT or TIME (minutes), DISTANZ or DISTANCE (km), KILOJOULE or KCAL (energy), KM/H (speed). Return ONLY a JSON object like this example: {"time_min":30,"km":15.03,"kcal":33,"speed":26.1} - use null for any value you cannot find. No explanation, no markdown, just the JSON.' }
           ]
         }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 256 }
+        generationConfig: { temperature: 0, maxOutputTokens: 150 }
       })
     });
 
     const data = await response.json();
-    console.log('Gemini response status:', response.status);
-    console.log('Gemini data:', JSON.stringify(data).slice(0, 500));
+    console.log('Status:', response.status);
+    console.log('Response:', JSON.stringify(data).slice(0, 800));
 
     if (!response.ok) {
-      return res.status(500).json({ error: data.error?.message || 'Gemini API error', details: data });
+      return res.status(500).json({ error: data.error?.message || 'Gemini error', raw: data });
     }
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    console.log('Gemini text:', text);
+    console.log('Text:', text);
 
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    // Extract JSON from text
+    const match = text.match(/\{[^}]+\}/);
+    if (!match) return res.status(500).json({ error: 'No JSON in response', text });
+    
+    const parsed = JSON.parse(match[0]);
+    
+    // Convert kilojoules to kcal if needed
+    if (parsed.kcal && parsed.kcal > 500) {
+      parsed.kcal = Math.round(parsed.kcal * 0.239);
+    }
+    
     res.status(200).json(parsed);
-
   } catch (err) {
     console.error('Error:', err.message);
     res.status(500).json({ error: err.message });
