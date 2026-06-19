@@ -11,36 +11,30 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not set' });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [
-          { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
-          { text: 'Read this exercise bike display. Return ONLY this JSON with no other text: {"time_min":30,"km":15.03,"speed":26.1,"kcal":327}' }
-        ]}],
-        generationConfig: { temperature: 0, maxOutputTokens: 200 }
-      })
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
+            { text: 'Read this exercise bike display. Return ONLY JSON: {"time_min":30,"km":15.03,"speed":26.1,"kcal":327} - time_min=ZEIT minutes (integer), km=DISTANZ (float), speed=KM/H (float), kcal=KILOJOULE/4.184 rounded (integer). null if not visible.' }
+          ]}],
+          generationConfig: {
+            temperature: 0,
+            maxOutputTokens: 100,
+            thinkingConfig: { thinkingBudget: 0 }
+          }
+        })
+      }
+    );
 
     const data = await response.json();
-    console.log('status:', response.status);
-    console.log('parts count:', data.candidates?.[0]?.content?.parts?.length);
-    
-    // Log ALL parts
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    parts.forEach((p, i) => {
-      console.log(`part[${i}] type:`, p.thought ? 'thought' : 'text', 'len:', (p.text||'').length, 'val:', (p.text||'').slice(0,100));
-    });
+    if (!response.ok) return res.status(500).json({ error: data.error?.message || 'Gemini error' });
 
-    // Find text part (skip thought parts)
-    const textPart = parts.find(p => !p.thought && p.text);
-    const text = (textPart?.text || '').trim();
-    console.log('final text:', text.slice(0, 200));
-
-    if (!text) return res.status(500).json({ error: 'Empty text from Gemini', parts: parts.map(p => ({thought: p.thought, len: (p.text||'').length})) });
+    const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    console.log('text:', text);
 
     const start = text.indexOf('{');
     const end = text.lastIndexOf('}');
