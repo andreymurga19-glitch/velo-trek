@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💪 FitТРЕК</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --card: #1e1e24;
+    --border: #2a2a35;
+    --accent: #f97316;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --text: #f1f1f3;
+    --muted: #6b6b7b;
+    --danger: #ef4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 24px; color: var(--accent); letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+  .logo span { color: var(--text); }
+
+  /* TOP TABS (Кардіо / Силові) */
+  .top-tabs {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .top-tab {
+    padding: 10px; border: none; border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    background: var(--card); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .top-tab.active-cardio { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .top-tab.active-strength { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+  /* SUB NAV */
+  .sub-nav {
+    display: flex; gap: 4px;
+    background: var(--card); border-radius: 10px;
+    padding: 4px; margin: 16px 16px 0;
+  }
+  .sub-tab {
+    flex: 1; padding: 7px; border: none; background: transparent;
+    color: var(--muted); font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 500; border-radius: 7px; cursor: pointer; transition: all 0.2s;
+    text-align: center;
+  }
+  .sub-tab.active { background: var(--bg); color: var(--text); }
+
+  /* PAGES */
+  .section { display: none; }
+  .section.active { display: block; }
+  .page { display: none; padding: 16px; max-width: 700px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .form-card {
+    background: var(--card); border-radius: 16px;
+    padding: 18px; border: 1px solid var(--border); margin-bottom: 14px;
+  }
+  .form-card h3 { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+
+  .date-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .date-row label { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .date-row input[type="date"] {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif;
+    font-size: 14px; padding: 7px 10px; flex: 1; outline: none;
+  }
+
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+
+  .metric-input {
+    background: var(--bg); border-radius: 12px; padding: 12px;
+    display: flex; flex-direction: column; gap: 4px;
+    border: 1px solid transparent; transition: border-color 0.2s;
+  }
+  .metric-input:focus-within { border-color: var(--accent); }
+  .metric-input label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-input input {
+    background: transparent; border: none; color: var(--text);
+    font-family: 'Bebas Neue', cursive; font-size: 30px; width: 100%; outline: none;
+  }
+  .metric-input input::placeholder { color: var(--border); }
+  .metric-input .unit { font-family: 'Bebas Neue', cursive; font-size: 13px; color: var(--accent); }
+
+  /* BUTTONS */
+  .btn {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 13px 20px; border-radius: 12px; border: none;
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; width: 100%;
+  }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { background: #16a34a; }
+  .btn-purple { background: var(--purple); color: #fff; }
+  .btn-purple:hover { background: #9333ea; }
+  .btn-ghost { background: var(--border); color: var(--text); margin-top: 8px; }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+  .stat-card { background: var(--card); border-radius: 12px; padding: 12px 8px; text-align: center; border: 1px solid var(--border); }
+  .stat-card .num { font-family: 'Bebas Neue', cursive; font-size: 28px; color: var(--accent); line-height: 1; }
+  .stat-card .num.purple { color: var(--purple); }
+  .stat-card .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+
+  .period-selector { display: flex; gap: 4px; background: var(--card); border-radius: 10px; padding: 4px; margin-bottom: 14px; width: fit-content; }
+  .period-btn { padding: 6px 14px; border: none; background: transparent; color: var(--muted); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; border-radius: 7px; cursor: pointer; transition: all 0.2s; }
+  .period-btn.active { background: var(--accent); color: #fff; }
+  .period-btn.active-p { background: var(--purple); color: #fff; }
+
+  /* CHART */
+  .chart-wrap { background: var(--card); border-radius: 12px; padding: 14px; margin-bottom: 14px; border: 1px solid var(--border); }
+  .chart-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .chart-bars { display: flex; align-items: flex-end; gap: 5px; height: 70px; }
+  .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .chart-bar { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 3px; opacity: 0.85; }
+  .chart-bar.purple { background: var(--purple); }
+  .chart-bar-label { font-size: 9px; color: var(--muted); text-transform: uppercase; }
+
+  /* SESSION LIST */
+  .sessions-list { display: flex; flex-direction: column; gap: 8px; }
+  .session-item { background: var(--card); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); }
+  .session-date { min-width: 44px; text-align: center; }
+  .session-date .day { font-family: 'Bebas Neue', cursive; font-size: 24px; color: var(--accent); line-height: 1; }
+  .session-date .day.purple { color: var(--purple); }
+  .session-date .month { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+  .session-divider { width: 1px; height: 34px; background: var(--border); }
+  .session-metrics { flex: 1; display: flex; gap: 14px; flex-wrap: wrap; }
+  .session-metric .val { font-family: 'Bebas Neue', cursive; font-size: 18px; color: var(--text); line-height: 1; }
+  .session-metric .key { font-size: 9px; color: var(--muted); text-transform: uppercase; }
+  .session-delete { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 4px; border-radius: 6px; transition: all 0.2s; }
+  .session-delete:hover { color: var(--danger); background: rgba(239,68,68,0.1); }
+
+  /* STRENGTH WORKOUT */
+  .workout-card { background: var(--card); border-radius: 16px; padding: 16px; border: 1px solid var(--border); margin-bottom: 12px; }
+  .workout-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .workout-title { font-family: 'Bebas Neue', cursive; font-size: 22px; letter-spacing: 1px; color: var(--purple); }
+  .workout-date { font-size: 11px; color: var(--muted); }
+
+  .exercise-block { margin-bottom: 12px; }
+  .exercise-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .sets-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .set-badge {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 10px;
+    font-family: 'Bebas Neue', cursive; font-size: 14px;
+    color: var(--text); letter-spacing: 0.5px;
+  }
+  .set-badge.pr { border-color: var(--purple); color: var(--purple); }
+
+  /* VOICE */
+  .voice-btn {
+    width: 72px; height: 72px; border-radius: 50%; border: none;
+    background: var(--purple); color: #fff; font-size: 28px;
+    cursor: pointer; transition: all 0.2s; display: flex;
+    align-items: center; justify-content: center; margin: 0 auto 12px;
+    box-shadow: 0 0 0 0 rgba(168,85,247,0.4);
+  }
+  .voice-btn.listening {
+    animation: pulse 1s infinite;
+    background: var(--danger);
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .upload-zone {
+    border: 2px dashed var(--border); border-radius: 16px;
+    padding: 30px 20px; text-align: center; cursor: pointer;
+    background: var(--card); margin: 16px 16px 12px; transition: all 0.3s;
+  }
+  .upload-zone:hover { border-color: var(--accent); background: rgba(249,115,22,0.05); }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.4); } 50% { box-shadow: 0 0 0 16px rgba(168,85,247,0); } }
+
+  .voice-status { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 12px; min-height: 20px; }
+  .voice-result { background: var(--bg); border-radius: 10px; padding: 12px; font-size: 14px; color: var(--text); margin-bottom: 12px; display: none; min-height: 44px; }
+
+  /* ADD EXERCISE FORM */
+  .exercise-form { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .ex-input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; outline: none; width: 100%; }
+  .ex-input:focus { border-color: var(--purple); }
+
+  /* CALENDAR */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .cal-nav h2 { font-family: 'Bebas Neue', cursive; font-size: 22px; letter-spacing: 1px; }
+  .cal-nav button { background: var(--card); border: 1px solid var(--border); color: var(--text); width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .cal-nav button:hover { border-color: var(--accent); color: var(--accent); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; margin-bottom: 16px; }
+  .cal-header { text-align: center; font-size: 9px; color: var(--muted); text-transform: uppercase; padding: 5px 0; }
+  .cal-day { aspect-ratio: 1; border-radius: 7px; background: var(--card); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; }
+  .cal-day.empty { background: transparent; border-color: transparent; }
+  .cal-day.has-cardio { border-color: var(--accent); background: rgba(249,115,22,0.12); cursor: pointer; }
+  .cal-day.has-strength { border-color: var(--purple); background: rgba(168,85,247,0.12); cursor: pointer; }
+  .cal-day.has-both { border-color: var(--green); background: rgba(34,197,94,0.12); cursor: pointer; }
+  .cal-day.today { box-shadow: 0 0 0 2px var(--blue); }
+  .cal-day .cal-num { font-weight: 600; line-height: 1; }
+  .cal-day .cal-km { font-size: 9px; color: var(--accent); margin-top: 2px; font-weight: 700; }
+  .cal-day .cal-dots { display: flex; gap: 2px; margin-top: 3px; }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .cal-dot.c { background: var(--accent); }
+  .cal-dot.s { background: var(--purple); }
+
+  .day-detail { background: var(--card); border-radius: 14px; padding: 16px; border: 1px solid var(--border); display: none; }
+  .day-detail h3 { font-size: 12px; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--green); color: #fff; padding: 11px 22px; border-radius: 100px; font-weight: 600; font-size: 13px; transition: transform 0.3s; z-index: 1000; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--danger); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">💪 <span>FIT</span>ТРЕК</div>
+  <div class="top-tabs">
+    <button class="top-tab active-cardio" onclick="switchSection('cardio')">🚴 Кардіо</button>
+    <button class="top-tab" onclick="switchSection('strength')">🏋️ Силові</button>
+  </div>
+</div>
+
+<!-- ===== CARDIO SECTION ===== -->
+<div class="section active" id="section-cardio">
+  <div class="sub-nav">
+    <button class="sub-tab active" onclick="switchPage('cardio','add')">+ Додати</button>
+    <button class="sub-tab" onclick="switchPage('cardio','history')">Історія</button>
+    <button class="sub-tab" onclick="switchPage('cardio','calendar')">Календар</button>
+  </div>
+
+  <!-- Cardio Add -->
+  <div class="page active" id="cardio-add">
+    <!-- Upload zone -->
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <div style="font-size:36px;margin-bottom:8px">📷</div>
+      <div style="font-weight:600;font-size:15px;margin-bottom:4px">Завантаж фото з тренажера</div>
+      <div style="color:var(--muted);font-size:13px">AI зчитає показники автоматично</div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(this.files[0])">
+    </div>
+
+    <div id="previewContainer" style="display:none;margin-bottom:12px">
+      <img id="previewImg" style="width:100%;max-height:240px;object-fit:contain;border-radius:12px">
+    </div>
+
+    <div id="loadingDiv" style="display:none;text-align:center;padding:20px;color:var(--muted)">
+      <div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px"></div>
+      AI читає показники…
+    </div>
+
+    <div class="form-card">
+      <h3>🚴 Показники тренування</h3>
+      <div class="date-row">
+        <label>📅 Дата</label>
+        <input type="date" id="cDate">
+      </div>
+      <div class="metrics-grid">
+        <div class="metric-input">
+          <label>Час</label>
+          <input type="number" id="cTime" placeholder="0" step="1" min="0">
+          <span class="unit">ХВ</span>
+        </div>
+        <div class="metric-input">
+          <label>Кілометри</label>
+          <input type="number" id="cKm" placeholder="0.0" step="0.1" min="0">
+          <span class="unit">КМ</span>
+        </div>
+        <div class="metric-input">
+          <label>Калорії</label>
+          <input type="number" id="cCal" placeholder="0" step="1" min="0">
+          <span class="unit">ККАЛ</span>
+        </div>
+        <div class="metric-input">
+          <label>Швидкість</label>
+          <input type="number" id="cSpeed" placeholder="0.0" step="0.1" min="0">
+          <span class="unit">КМ/Г</span>
+        </div>
+      </div>
+      <button class="btn btn-green" onclick="saveCardio()">✅ Зберегти</button>
+    </div>
+  </div>
+
+  <!-- Cardio History -->
+  <div class="page" id="cardio-history">
+    <div class="period-selector">
+      <button class="period-btn active" onclick="setCPeriod('week',this)">Тиждень</button>
+      <button class="period-btn" onclick="setCPeriod('month',this)">Місяць</button>
+      <button class="period-btn" onclick="setCPeriod('all',this)">Всі</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="num" id="cTotalKm">0</div><div class="lbl">Км</div></div>
+      <div class="stat-card"><div class="num" id="cTotalMin">0</div><div class="lbl">Хвилин</div></div>
+      <div class="stat-card"><div class="num" id="cTotalCal">0</div><div class="lbl">Ккал</div></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Км по тренуваннях</div>
+      <div class="chart-bars" id="cChartBars"></div>
+    </div>
+    <div class="sessions-list" id="cSessionsList"></div>
+  </div>
+
+  <!-- Cardio Calendar -->
+  <div class="page" id="cardio-calendar">
+    <div class="cal-nav">
+      <button onclick="calPrev('c')">◀</button>
+      <h2 id="cCalTitle"></h2>
+      <button onclick="calNext('c')">▶</button>
+    </div>
+    <div class="cal-grid" id="cCalGrid"></div>
+    <div class="day-detail" id="cDayDetail">
+      <h3 id="cDayTitle"></h3>
+      <div class="metrics-grid" id="cDayMetrics"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STRENGTH SECTION ===== -->
+<div class="section" id="section-strength">
+  <div class="sub-nav">
+    <button class="sub-tab active" onclick="switchPage('strength','add')">+ Додати</button>
+    <button class="sub-tab" onclick="switchPage('strength','history')">Історія</button>
+    <button class="sub-tab" onclick="switchPage('strength','calendar')">Календар</button>
+  </div>
+
+  <!-- Strength Add -->
+  <div class="page active" id="strength-add">
+    <div class="form-card">
+      <h3>🎤 Голосовий ввід вправи</h3>
+      <div class="date-row">
+        <label>📅 Дата</label>
+        <input type="date" id="sDate">
+      </div>
+      <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎤</button>
+      <div class="voice-status" id="voiceStatus">Натисни мікрофон і скажи вправу</div>
+      <div class="voice-result" id="voiceResult"></div>
+    </div>
+
+    <div class="form-card">
+      <h3>✏️ Або додай вручну</h3>
+      <div style="margin-bottom:10px">
+        <input class="ex-input" id="exName" placeholder="Назва вправи (напр. Жим лежачи)" style="width:100%;margin-bottom:8px">
+        <div id="setsContainer">
+          <div class="exercise-form" id="setRow0">
+            <input class="ex-input" placeholder="Повт." type="number" min="1" id="reps0">
+            <input class="ex-input" placeholder="Вага кг" type="number" step="0.5" id="weight0">
+            <button onclick="addSetRow()" style="background:var(--purple);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">+</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-purple" onclick="saveExercise()">💪 Додати вправу</button>
+    </div>
+
+    <!-- Current workout preview -->
+    <div id="currentWorkoutPreview"></div>
+
+    <button class="btn btn-green" onclick="saveWorkout()" id="saveWorkoutBtn" style="display:none">✅ Зберегти тренування</button>
+  </div>
+
+  <!-- Strength History -->
+  <div class="page" id="strength-history">
+    <div class="period-selector">
+      <button class="period-btn active-p" onclick="setSPeriod('week',this)">Тиждень</button>
+      <button class="period-btn" onclick="setSPeriod('month',this)">Місяць</button>
+      <button class="period-btn" onclick="setSPeriod('all',this)">Всі</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="num purple" id="sTotalWorkouts">0</div><div class="lbl">Тренувань</div></div>
+      <div class="stat-card"><div class="num purple" id="sTotalSets">0</div><div class="lbl">Підходів</div></div>
+      <div class="stat-card"><div class="num purple" id="sTotalTonnage">0</div><div class="lbl">Тонн</div></div>
+    </div>
+    <div class="sessions-list" id="sSessionsList"></div>
+  </div>
+
+  <!-- Strength Calendar -->
+  <div class="page" id="strength-calendar">
+    <div class="cal-nav">
+      <button onclick="calPrev('s')">◀</button>
+      <h2 id="sCalTitle"></h2>
+      <button onclick="calNext('s')">▶</button>
+    </div>
+    <div class="cal-grid" id="sCalGrid"></div>
+    <div class="day-detail" id="sDayDetail">
+      <h3 id="sDayTitle"></h3>
+      <div id="sDayContent"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STORAGE =====
+const C_KEY = 'velo_sessions_v2';
+const S_KEY = 'strength_workouts_v1';
+
+function getCardio() { try { return JSON.parse(localStorage.getItem(C_KEY)||'[]'); } catch { return []; } }
+function saveCardioData(a) { localStorage.setItem(C_KEY, JSON.stringify(a)); }
+function getStrength() { try { return JSON.parse(localStorage.getItem(S_KEY)||'[]'); } catch { return []; } }
+function saveStrengthData(a) { localStorage.setItem(S_KEY, JSON.stringify(a)); }
+
+function todayStr() {
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+}
+
+function showToast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast'+(err?' error':'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ===== INIT DATES =====
+document.getElementById('cDate').value = todayStr();
+document.getElementById('sDate').value = todayStr();
+
+// ===== SECTION SWITCH =====
+let currentSection = 'cardio';
+
+function switchSection(s) {
+  currentSection = s;
+  document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
+  document.getElementById('section-'+s).classList.add('active');
+  const tabs = document.querySelectorAll('.top-tab');
+  tabs[0].className = 'top-tab' + (s==='cardio'?' active-cardio':'');
+  tabs[1].className = 'top-tab' + (s==='strength'?' active-strength':'');
+  if(s==='strength') renderStrengthHistory();
+  if(s==='cardio') renderCardioHistory();
+}
+
+function switchPage(section, p) {
+  const pages = document.querySelectorAll(`#section-${section} .page`);
+  pages.forEach(el=>el.classList.remove('active'));
+  document.getElementById(`${section}-${p}`).classList.add('active');
+  const tabs = document.querySelectorAll(`#section-${section} .sub-tab`);
+  tabs.forEach(t=>t.classList.remove('active'));
+  const idx = ['add','history','calendar'].indexOf(p);
+  if(tabs[idx]) tabs[idx].classList.add('active');
+  if(p==='history' && section==='cardio') renderCardioHistory();
+  if(p==='history' && section==='strength') renderStrengthHistory();
+  if(p==='calendar' && section==='cardio') renderCardioCalendar();
+  if(p==='calendar' && section==='strength') renderStrengthCalendar();
+}
+
+
+// ===== PHOTO UPLOAD =====
+const uploadZone = document.getElementById('uploadZone');
+if(uploadZone) {
+  uploadZone.addEventListener('dragover', e=>{e.preventDefault();uploadZone.style.borderColor='var(--accent)';});
+  uploadZone.addEventListener('dragleave', ()=>{uploadZone.style.borderColor='';});
+  uploadZone.addEventListener('drop', e=>{e.preventDefault();uploadZone.style.borderColor='';if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+}
+
+async function handleFile(file) {
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const b64 = e.target.result.split(',')[1];
+    const mime = file.type || 'image/jpeg';
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('previewContainer').style.display = 'block';
+    document.getElementById('loadingDiv').style.display = 'block';
+    try {
+      const resp = await fetch('/api/scan', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({imageBase64: b64, mimeType: mime})
+      });
+      const parsed = await resp.json();
+      if(parsed.time_min != null) document.getElementById('cTime').value = parsed.time_min;
+      if(parsed.km != null) document.getElementById('cKm').value = parsed.km;
+      if(parsed.kcal != null) document.getElementById('cCal').value = parsed.kcal;
+      if(parsed.speed != null) document.getElementById('cSpeed').value = parsed.speed;
+      showToast('✅ AI зчитав показники!');
+    } catch(err) {
+      showToast('AI не зміг прочитати — введи вручну', true);
+    } finally {
+      document.getElementById('loadingDiv').style.display = 'none';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===== CARDIO =====
+function saveCardio() {
+  const km = parseFloat(document.getElementById('cKm').value)||0;
+  const time = parseFloat(document.getElementById('cTime').value)||0;
+  if(!km&&!time){showToast('Введи хоч один показник',true);return;}
+  const s = {
+    id: Date.now(),
+    date: document.getElementById('cDate').value||todayStr(),
+    time_min: time, km, kcal: parseFloat(document.getElementById('cCal').value)||0,
+    speed: parseFloat(document.getElementById('cSpeed').value)||0
+  };
+  const arr = getCardio(); arr.push(s); saveCardioData(arr);
+  ['cTime','cKm','cCal','cSpeed'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cDate').value = todayStr();
+  showToast('✅ Кардіо збережено!');
+}
+
+let cPeriod = 'week';
+function setCPeriod(p,btn) {
+  cPeriod=p;
+  document.querySelectorAll('#cardio-history .period-btn').forEach(b=>{b.classList.remove('active');});
+  btn.classList.add('active');
+  renderCardioHistory();
+}
+
+function filterByPeriod(arr, period) {
+  const now = new Date();
+  return arr.filter(s=>{
+    const d = new Date(s.date+'T12:00:00');
+    if(period==='week'){const w=new Date(now);w.setDate(w.getDate()-7);return d>=w;}
+    if(period==='month'){return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();}
+    return true;
+  });
+}
+
+function renderCardioHistory() {
+  const all = getCardio().sort((a,b)=>b.date.localeCompare(a.date));
+  const sessions = filterByPeriod(all, cPeriod);
+  document.getElementById('cTotalKm').textContent = sessions.reduce((s,x)=>s+x.km,0).toFixed(1);
+  document.getElementById('cTotalMin').textContent = Math.round(sessions.reduce((s,x)=>s+x.time_min,0));
+  document.getElementById('cTotalCal').textContent = Math.round(sessions.reduce((s,x)=>s+x.kcal,0));
+  renderCardioChart(sessions);
+  const list = document.getElementById('cSessionsList');
+  if(!sessions.length){list.innerHTML='<div class="empty-state"><div class="icon">🚴</div><p>Немає тренувань</p></div>';return;}
+  list.innerHTML = sessions.map(s=>{
+    const d = new Date(s.date+'T12:00:00');
+    return `<div class="session-item">
+      <div class="session-date"><div class="day">${d.getDate()}</div><div class="month">${d.toLocaleString('uk-UA',{month:'short'})}</div></div>
+      <div class="session-divider"></div>
+      <div class="session-metrics">
+        <div class="session-metric"><div class="val">${s.km.toFixed(1)}</div><div class="key">км</div></div>
+        <div class="session-metric"><div class="val">${Math.round(s.time_min)}</div><div class="key">хв</div></div>
+        ${s.kcal?`<div class="session-metric"><div class="val">${Math.round(s.kcal)}</div><div class="key">ккал</div></div>`:''}
+        ${s.speed?`<div class="session-metric"><div class="val">${s.speed.toFixed(1)}</div><div class="key">км/г</div></div>`:''}
+      </div>
+      <button class="session-delete" onclick="deleteCardio(${s.id})">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function renderCardioChart(sessions) {
+  const bars = document.getElementById('cChartBars');
+  if(!sessions.length){bars.innerHTML='';return;}
+  const byDate={};
+  sessions.forEach(s=>{byDate[s.date]=(byDate[s.date]||0)+s.km;});
+  const dates=Object.keys(byDate).sort().slice(-10);
+  const vals=dates.map(d=>byDate[d]);
+  const max=Math.max(...vals)||1;
+  bars.innerHTML=dates.map((d,i)=>{
+    const h=Math.max(4,Math.round((vals[i]/max)*66));
+    const label=new Date(d+'T12:00:00').toLocaleString('uk-UA',{weekday:'short'});
+    return `<div class="chart-bar-wrap"><div class="chart-bar" style="height:${h}px"></div><div class="chart-bar-label">${label}</div></div>`;
+  }).join('');
+}
+
+function deleteCardio(id) {
+  if(!confirm('Видалити?'))return;
+  saveCardioData(getCardio().filter(s=>s.id!==id));
+  renderCardioHistory();
+  showToast('Видалено');
+}
+
+// Cardio Calendar
+let cCalY, cCalM;
+function initCCal(){const n=new Date();cCalY=n.getFullYear();cCalM=n.getMonth();}
+function calPrev(t){if(t==='c'){cCalM--;if(cCalM<0){cCalM=11;cCalY--;}renderCardioCalendar();}else{sCalM--;if(sCalM<0){sCalM=11;sCalY--;}renderStrengthCalendar();}}
+function calNext(t){if(t==='c'){cCalM++;if(cCalM>11){cCalM=0;cCalY++;}renderCardioCalendar();}else{sCalM++;if(sCalM>11){sCalM=0;sCalY++;}renderStrengthCalendar();}}
+
+function renderCardioCalendar() {
+  const byDate={};
+  getCardio().forEach(s=>{byDate[s.date]=(byDate[s.date]||0)+s.km;});
+  const months=['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
+  document.getElementById('cCalTitle').textContent=`${months[cCalM]} ${cCalY}`;
+  const days=['Пн','Вт','Ср','Чт','Пт','Сб','Нд'];
+  let html=days.map(d=>`<div class="cal-header">${d}</div>`).join('');
+  let start=new Date(cCalY,cCalM,1).getDay();start=start===0?6:start-1;
+  for(let i=0;i<start;i++)html+='<div class="cal-day empty"></div>';
+  const dim=new Date(cCalY,cCalM+1,0).getDate();
+  const today=todayStr();
+  for(let d=1;d<=dim;d++){
+    const ds=`${cCalY}-${String(cCalM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const has=byDate[ds]!=null;
+    const isT=ds===today;
+    let cls='cal-day'+(has?' has-cardio':'')+(isT?' today':'');
+    const km=has?`<div class="cal-km">${byDate[ds].toFixed(1)}км</div>`:'';
+    html+=`<div class="${cls}" ${has?`onclick="showCDay('${ds}')"`:''}><div class="cal-num">${d}</div>${km}</div>`;
+  }
+  document.getElementById('cCalGrid').innerHTML=html;
+  document.getElementById('cDayDetail').style.display='none';
+}
+
+function showCDay(ds) {
+  const sessions=getCardio().filter(s=>s.date===ds);
+  if(!sessions.length)return;
+  const d=new Date(ds+'T12:00:00');
+  document.getElementById('cDayTitle').textContent=d.toLocaleDateString('uk-UA',{day:'numeric',month:'long',year:'numeric'});
+  const t=sessions.reduce((a,s)=>({km:a.km+s.km,time_min:a.time_min+s.time_min,kcal:a.kcal+s.kcal}),{km:0,time_min:0,kcal:0});
+  document.getElementById('cDayMetrics').innerHTML=`
+    <div class="metric-input"><label>Км</label><input readonly value="${t.km.toFixed(1)}"><span class="unit">КМ</span></div>
+    <div class="metric-input"><label>Час</label><input readonly value="${Math.round(t.time_min)}"><span class="unit">ХВ</span></div>
+    <div class="metric-input"><label>Ккал</label><input readonly value="${Math.round(t.kcal)}"><span class="unit">ККАЛ</span></div>`;
+  const dd=document.getElementById('cDayDetail');
+  dd.style.display='block';
+  dd.scrollIntoView({behavior:'smooth'});
+}
+
+// ===== STRENGTH =====
+let currentExercises = []; // exercises in current session being built
+let setRowCount = 1;
+
+function addSetRow() {
+  const c = document.getElementById('setsContainer');
+  const div = document.createElement('div');
+  div.className = 'exercise-form';
+  div.id = `setRow${setRowCount}`;
+  div.innerHTML = `
+    <input class="ex-input" placeholder="Повт." type="number" min="1" id="reps${setRowCount}">
+    <input class="ex-input" placeholder="Вага кг" type="number" step="0.5" id="weight${setRowCount}">
+    <button onclick="removeSetRow(${setRowCount})" style="background:var(--danger);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">−</button>`;
+  c.appendChild(div);
+  setRowCount++;
+}
+
+function removeSetRow(i) {
+  document.getElementById(`setRow${i}`).remove();
+}
+
+function saveExercise() {
+  const name = document.getElementById('exName').value.trim();
+  if(!name){showToast('Введи назву вправи',true);return;}
+  const sets = [];
+  document.querySelectorAll('#setsContainer .exercise-form').forEach((row,i)=>{
+    const repsEl = row.querySelector('[id^="reps"]');
+    const weightEl = row.querySelector('[id^="weight"]');
+    const reps = parseInt(repsEl?.value)||0;
+    const weight = parseFloat(weightEl?.value)||0;
+    if(reps>0) sets.push({reps, weight});
+  });
+  if(!sets.length){showToast('Додай хоч один підхід',true);return;}
+  currentExercises.push({name, sets});
+  renderCurrentWorkout();
+  document.getElementById('exName').value='';
+  document.getElementById('setsContainer').innerHTML=`
+    <div class="exercise-form" id="setRow0">
+      <input class="ex-input" placeholder="Повт." type="number" min="1" id="reps0">
+      <input class="ex-input" placeholder="Вага кг" type="number" step="0.5" id="weight0">
+      <button onclick="addSetRow()" style="background:var(--purple);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">+</button>
+    </div>`;
+  setRowCount=1;
+  showToast('Вправу додано!');
+}
+
+function renderCurrentWorkout() {
+  if(!currentExercises.length){
+    document.getElementById('currentWorkoutPreview').innerHTML='';
+    document.getElementById('saveWorkoutBtn').style.display='none';
+    return;
+  }
+  document.getElementById('saveWorkoutBtn').style.display='flex';
+  let html = '<div class="workout-card"><div class="workout-header"><div class="workout-title">Поточне тренування</div></div>';
+  currentExercises.forEach((ex,i)=>{
+    html+=`<div class="exercise-block">
+      <div class="exercise-name">${ex.name} <button onclick="removeExercise(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;">✕</button></div>
+      <div class="sets-row">${ex.sets.map(s=>`<div class="set-badge">${s.reps}×${s.weight}кг</div>`).join('')}</div>
+    </div>`;
+  });
+  html+='</div>';
+  document.getElementById('currentWorkoutPreview').innerHTML=html;
+}
+
+function removeExercise(i) {
+  currentExercises.splice(i,1);
+  renderCurrentWorkout();
+}
+
+function saveWorkout() {
+  if(!currentExercises.length){showToast('Додай вправи',true);return;}
+  const workout = {
+    id: Date.now(),
+    date: document.getElementById('sDate').value||todayStr(),
+    exercises: [...currentExercises]
+  };
+  const arr = getStrength(); arr.push(workout); saveStrengthData(arr);
+  currentExercises=[];
+  renderCurrentWorkout();
+  document.getElementById('sDate').value=todayStr();
+  showToast('✅ Тренування збережено!');
+}
+
+// VOICE
+let recognition = null;
+let isListening = false;
+
+function toggleVoice() {
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
+    showToast('Браузер не підтримує голос',true);return;
+  }
+  if(isListening){stopVoice();return;}
+  startVoice();
+}
+
+function startVoice() {
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang='uk-UA';
+  recognition.continuous=false;
+  recognition.interimResults=false;
+  recognition.maxAlternatives=3;
+  recognition.onstart=()=>{
+    isListening=true;
+    document.getElementById('voiceBtn').classList.add('listening');
+    document.getElementById('voiceBtn').textContent='⏹';
+    document.getElementById('voiceStatus').textContent='Слухаю… говори вправу';
+  };
+  recognition.onresult=(e)=>{
+    const text=e.results[0][0].transcript;
+    document.getElementById('voiceResult').style.display='block';
+    document.getElementById('voiceResult').textContent='🎤 '+text;
+    parseVoiceInput(text);
+  };
+  recognition.onerror=()=>{showToast('Помилка мікрофона',true);stopVoice();};
+  recognition.onend=()=>stopVoice();
+  recognition.start();
+}
+
+function stopVoice() {
+  isListening=false;
+  if(recognition)recognition.abort();
+  document.getElementById('voiceBtn').classList.remove('listening');
+  document.getElementById('voiceBtn').textContent='🎤';
+  document.getElementById('voiceStatus').textContent='Натисни мікрофон і скажи вправу';
+}
+
+function parseVoiceInput(text) {
+  // Simple parser: extract numbers and exercise name
+  const t = text.toLowerCase();
+  const nums = t.match(/\d+([.,]\d+)?/g)||[];
+  let reps=0, weight=0, name=text;
+  if(nums.length>=2){
+    reps=parseInt(nums[0]);
+    weight=parseFloat(nums[1].replace(',','.'));
+  } else if(nums.length===1){
+    reps=parseInt(nums[0]);
+  }
+  // Try to find exercise name
+  const exNames=['жим лежачи','присідання','тяга','підтягування','молотки','біцепс','трицепс','плечі','прес','віджимання'];
+  let foundName='';
+  exNames.forEach(n=>{if(t.includes(n))foundName=n;});
+  if(!foundName) foundName=text.replace(/\d+([.,]\d+)?/g,'').trim()||text;
+
+  if(reps>0){
+    // Pre-fill form
+    document.getElementById('exName').value = capitalize(foundName);
+    document.getElementById('reps0').value = reps;
+    if(weight>0) document.getElementById('weight0').value = weight;
+    document.getElementById('voiceStatus').textContent='✅ Перевір і натисни "Додати вправу"';
+  } else {
+    document.getElementById('exName').value = capitalize(text);
+    document.getElementById('voiceStatus').textContent='✅ Додай повтори і вагу';
+  }
+}
+
+function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+// Strength History
+let sPeriod='week';
+function setSPeriod(p,btn){
+  sPeriod=p;
+  document.querySelectorAll('#strength-history .period-btn').forEach(b=>{b.classList.remove('active-p');b.classList.remove('active');});
+  btn.classList.add('active-p');
+  renderStrengthHistory();
+}
+
+function renderStrengthHistory() {
+  const all = getStrength().sort((a,b)=>b.date.localeCompare(a.date));
+  const workouts = filterByPeriod(all, sPeriod);
+  let totalSets=0, totalTonnage=0;
+  workouts.forEach(w=>{w.exercises.forEach(ex=>{ex.sets.forEach(s=>{totalSets++;totalTonnage+=s.reps*s.weight;});});});
+  document.getElementById('sTotalWorkouts').textContent=workouts.length;
+  document.getElementById('sTotalSets').textContent=totalSets;
+  document.getElementById('sTotalTonnage').textContent=(totalTonnage/1000).toFixed(1);
+  const list=document.getElementById('sSessionsList');
+  if(!workouts.length){list.innerHTML='<div class="empty-state"><div class="icon">🏋️</div><p>Немає тренувань</p></div>';return;}
+  list.innerHTML=workouts.map(w=>{
+    const d=new Date(w.date+'T12:00:00');
+    const exList=w.exercises.map(ex=>`
+      <div class="exercise-block">
+        <div class="exercise-name">${ex.name}</div>
+        <div class="sets-row">${ex.sets.map(s=>`<div class="set-badge">${s.reps}×${s.weight}кг</div>`).join('')}</div>
+      </div>`).join('');
+    return `<div class="workout-card">
+      <div class="workout-header">
+        <div class="workout-title">${d.toLocaleDateString('uk-UA',{day:'numeric',month:'short'})}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="workout-date">${w.exercises.length} вправ</div>
+          <button class="session-delete" onclick="deleteWorkout(${w.id})">🗑</button>
+        </div>
+      </div>
+      ${exList}
+    </div>`;
+  }).join('');
+}
+
+function deleteWorkout(id){
+  if(!confirm('Видалити тренування?'))return;
+  saveStrengthData(getStrength().filter(w=>w.id!==id));
+  renderStrengthHistory();
+  showToast('Видалено');
+}
+
+// Strength Calendar
+let sCalY, sCalM;
+function initSCal(){const n=new Date();sCalY=n.getFullYear();sCalM=n.getMonth();}
+
+function renderStrengthCalendar(){
+  const byDate={};
+  getStrength().forEach(w=>{byDate[w.date]=(byDate[w.date]||0)+1;});
+  const months=['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
+  document.getElementById('sCalTitle').textContent=`${months[sCalM]} ${sCalY}`;
+  const days=['Пн','Вт','Ср','Чт','Пт','Сб','Нд'];
+  let html=days.map(d=>`<div class="cal-header">${d}</div>`).join('');
+  let start=new Date(sCalY,sCalM,1).getDay();start=start===0?6:start-1;
+  for(let i=0;i<start;i++)html+='<div class="cal-day empty"></div>';
+  const dim=new Date(sCalY,sCalM+1,0).getDate();
+  const today=todayStr();
+  for(let d=1;d<=dim;d++){
+    const ds=`${sCalY}-${String(sCalM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const has=byDate[ds];
+    const isT=ds===today;
+    let cls='cal-day'+(has?' has-strength':'')+(isT?' today':'');
+    const dot=has?`<div class="cal-dots"><div class="cal-dot s"></div></div>`:'';
+    html+=`<div class="${cls}" ${has?`onclick="showSDay('${ds}')"`:''}><div class="cal-num">${d}</div>${dot}</div>`;
+  }
+  document.getElementById('sCalGrid').innerHTML=html;
+  document.getElementById('sDayDetail').style.display='none';
+}
+
+function showSDay(ds){
+  const workouts=getStrength().filter(w=>w.date===ds);
+  if(!workouts.length)return;
+  const d=new Date(ds+'T12:00:00');
+  document.getElementById('sDayTitle').textContent=d.toLocaleDateString('uk-UA',{day:'numeric',month:'long',year:'numeric'});
+  let html='';
+  workouts.forEach(w=>{
+    w.exercises.forEach(ex=>{
+      html+=`<div class="exercise-block">
+        <div class="exercise-name">${ex.name}</div>
+        <div class="sets-row">${ex.sets.map(s=>`<div class="set-badge">${s.reps}×${s.weight}кг</div>`).join('')}</div>
+      </div>`;
+    });
+  });
+  document.getElementById('sDayContent').innerHTML=html;
+  const dd=document.getElementById('sDayDetail');
+  dd.style.display='block';
+  dd.scrollIntoView({behavior:'smooth'});
+}
+
+// ===== PRELOAD DATA =====
+(function(){
+  // Cardio sessions
+  const existing=getCardio();
+  const ids=existing.map(s=>s.date+'_'+s.km);
+  const preload=[
+    {id:1750240001000,date:'2026-06-18',time_min:11,km:5.06,kcal:110,speed:26.1},
+    {id:1750240002000,date:'2026-06-18',time_min:21,km:10.10,kcal:220,speed:26.1},
+  ];
+  preload.forEach(s=>{
+    if(!ids.includes(s.date+'_'+s.km)) existing.push(s);
+  });
+  saveCardioData(existing);
+
+  // Strength workout
+  const sw=getStrength();
+  if(!sw.find(w=>w.id===1750240100000)){
+    sw.push({
+      id:1750240100000,
+      date:'2026-06-18',
+      exercises:[
+        {name:'Жим лежачи',sets:[{reps:15,weight:60},{reps:17,weight:80},{reps:15,weight:80},{reps:13,weight:80},{reps:13,weight:80},{reps:13,weight:80}]},
+        {name:'Молотки',sets:[{reps:10,weight:20},{reps:10,weight:20},{reps:10,weight:20},{reps:10,weight:20},{reps:10,weight:20}]}
+      ]
+    });
+    saveStrengthData(sw);
+  }
+})();
+
+initCCal();
+initSCal();
+</script>
+</body>
+</html>
