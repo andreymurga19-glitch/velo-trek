@@ -543,7 +543,7 @@ function renderCardioHistory() {
   document.getElementById('cTotalKm').textContent = sessions.reduce((s,x)=>s+x.km,0).toFixed(1);
   document.getElementById('cTotalMin').textContent = Math.round(sessions.reduce((s,x)=>s+x.time_min,0));
   document.getElementById('cTotalCal').textContent = Math.round(sessions.reduce((s,x)=>s+x.kcal,0));
-  renderCardioChart(sessions);
+  // chart removed
   const list = document.getElementById('cSessionsList');
   if(!sessions.length){list.innerHTML='<div class="empty-state"><div class="icon">🚴</div><p>Немає тренувань</p></div>';return;}
   // Group by date
