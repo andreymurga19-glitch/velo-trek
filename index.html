@@ -600,13 +600,19 @@ function renderCardioChart(sessions) {
   if(!sessions.length){bars.innerHTML='';return;}
   const byDate={};
   sessions.forEach(s=>{byDate[s.date]=(byDate[s.date]||0)+s.km;});
-  const dates=Object.keys(byDate).sort().slice(-10);
+  // Only dates with actual data
+  const dates=Object.keys(byDate).filter(d=>byDate[d]>0).sort().slice(-10);
+  if(!dates.length){bars.innerHTML='';return;}
   const vals=dates.map(d=>byDate[d]);
   const max=Math.max(...vals)||1;
   bars.innerHTML=dates.map((d,i)=>{
     const h=Math.max(4,Math.round((vals[i]/max)*66));
-    const label=new Date(d+'T12:00:00').toLocaleString('uk-UA',{weekday:'short'});
-    return `<div class="chart-bar-wrap"><div class="chart-bar" style="height:${h}px"></div><div class="chart-bar-label">${label}</div></div>`;
+    const day=new Date(d+'T12:00:00').getDate();
+    const month=new Date(d+'T12:00:00').toLocaleString('uk-UA',{month:'short'});
+    return `<div class="chart-bar-wrap">
+      <div class="chart-bar" style="height:${h}px" title="${vals[i].toFixed(1)}км"></div>
+      <div class="chart-bar-label">${day}</div>
+    </div>`;
   }).join('');
 }
 
