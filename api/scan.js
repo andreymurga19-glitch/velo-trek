@@ -13,30 +13,31 @@ export default async function handler(req, res) {
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
-    const prompt = `You are an OCR expert. This is a Sportsline exercise bike display. Extract these values:
-1. Time (top left corner, format MM:SS like 30:01) - convert to minutes only (e.g. 30:01 = 30)
-2. Distance (right side, labeled DISTANZ, e.g. 15.03) - in km
-3. Speed (right side, labeled KM/H, e.g. 26.1)
-4. Energy (bottom right, labeled KILOJOULE, e.g. 1369) - convert kJ to kcal by dividing by 4.184
-
-Return ONLY valid JSON, no markdown, no explanation:
-{"time_min": <integer>, "km": <float>, "speed": <float>, "kcal": <integer>}
-Use null for any value not found.`;
-
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [
           { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
-          { text: prompt }
+          { text: `This is a Sportsline exercise bike display. Extract these values and return ONLY a JSON object:
+- time_min: the ZEIT/TIME value (top left, format MM:SS like 30:01) - return ONLY the minutes as integer (e.g. 30:01 → 30, 11:01 → 11)
+- km: the DISTANZ/DISTANCE value as float (e.g. 15.03)
+- speed: the KM/H value as float (e.g. 26.1)
+- kcal: the KILOJOULE value divided by 4.184, rounded to integer (e.g. 1369 kJ → 327 kcal)
+
+Return ONLY this JSON, nothing else, no markdown:
+{"time_min": 30, "km": 15.03, "speed": 26.1, "kcal": 327}` }
         ]}],
-        generationConfig: { temperature: 0, maxOutputTokens: 200 }
+        generationConfig: {
+          temperature: 0,
+          maxOutputTokens: 100,
+          responseMimeType: 'application/json'
+        }
       })
     });
 
     const data = await response.json();
-    console.log('Gemini raw:', JSON.stringify(data).slice(0, 600));
+    console.log('Raw:', JSON.stringify(data).slice(0, 500));
 
     if (!response.ok) return res.status(500).json({ error: data.error?.message, raw: data });
 
@@ -44,11 +45,28 @@ Use null for any value not found.`;
     console.log('Text:', text);
 
     const match = text.match(/\{[\s\S]*?\}/);
-    if (!match) return res.status(500).json({ error: 'No JSON found', text });
+    if (!match) return res.status(500).json({ error: 'No JSON', text });
 
-    const parsed = JSON.parse(match[0]);
-    console.log('Parsed:', parsed);
-    res.status(200).json(parsed);
+    const raw = JSON.parse(match[0]);
+
+    // Fix time_min if it came as "30:01" string
+    let time_min = raw.time_min;
+    if (typeof time_min === 'string' && time_min.includes(':')) {
+      time_min = parseInt(time_min.split(':')[0]);
+    } else {
+      time_min = parseInt(time_min) || null;
+    }
+
+    // Fix kcal if it came as raw kJ (>500 means it's kJ not kcal)
+    let kcal = raw.kcal;
+    if (kcal && kcal > 500) kcal = Math.round(kcal / 4.184);
+
+    res.status(200).json({
+      time_min,
+      km: raw.km || null,
+      speed: raw.speed || null,
+      kcal: kcal || null
+    });
 
   } catch (err) {
     console.error('Error:', err.message);
