@@ -558,7 +558,7 @@ function renderCardioHistory() {
         <div class="session-metric"><div class="val">${s.km.toFixed(1)}</div><div class="key">км</div></div>
         <div class="session-metric"><div class="val">${Math.round(s.time_min)}</div><div class="key">хв</div></div>
         ${s.kcal?`<div class="session-metric"><div class="val">${Math.round(s.kcal)}</div><div class="key">ккал</div></div>`:''}
-        ${s.speed?`<div class="session-metric"><div class="val">${s.speed.toFixed(1)}</div><div class="key">км/г</div></div>`:''}
+        ${(s.km&&s.time_min)?`<div class="session-metric"><div class="val">${((s.km/(s.time_min/60))).toFixed(1)}</div><div class="key">км/г</div></div>`:''}
       </div>
       <button class="session-delete" onclick="deleteCardio(${s.id})">🗑</button>
     </div>`;
