@@ -296,6 +296,16 @@
           <input type="number" id="cSpeed" placeholder="0.0" step="0.1" min="0">
           <span class="unit">КМ/Г</span>
         </div>
+        <div class="metric-input">
+          <label>Ватти</label>
+          <input type="number" id="cWatt" placeholder="0" step="1" min="0">
+          <span class="unit">WATT</span>
+        </div>
+        <div class="metric-input">
+          <label>Рівень опору</label>
+          <input type="number" id="cLevel" placeholder="0" step="1" min="0" max="20">
+          <span class="unit">РІВЕНЬ</span>
+        </div>
       </div>
       <button class="btn btn-green" onclick="saveCardio()">✅ Зберегти</button>
     </div>
@@ -511,10 +521,12 @@ function saveCardio() {
     id: Date.now(),
     date: document.getElementById('cDate').value||todayStr(),
     time_min: time, km, kcal: parseFloat(document.getElementById('cCal').value)||0,
-    speed: parseFloat(document.getElementById('cSpeed').value)||0
+    speed: parseFloat(document.getElementById('cSpeed').value)||0,
+    watt: parseFloat(document.getElementById('cWatt').value)||0,
+    level: parseFloat(document.getElementById('cLevel').value)||0
   };
   const arr = getCardio(); arr.push(s); saveCardioData(arr);
-  ['cTime','cKm','cCal','cSpeed'].forEach(id=>document.getElementById(id).value='');
+  ['cTime','cKm','cCal','cSpeed','cWatt','cLevel'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cDate').value = todayStr();
   showToast('✅ Кардіо збережено!');
 }
