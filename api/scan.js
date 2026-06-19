@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     let kcal = raw.kcal;
     if (kcal != null && kcal > 500) kcal = Math.round(kcal / 4.184);
 
-    return res.status(200).json({ time_min, km: raw.km || null, speed: raw.speed || null, kcal: kcal || null });
+    return res.status(200).json({ time_min, km: raw.km || null, speed: raw.speed || null, kcal: kcal || null, watt: raw.watt || null, level: raw.level || null });
 
   } catch (err) {
     console.error('Error:', err.message);
