@@ -19,57 +19,63 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents: [{ parts: [
           { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
-          { text: `This is a Sportsline exercise bike display. Extract these values and return ONLY a JSON object:
-- time_min: the ZEIT/TIME value (top left, format MM:SS like 30:01) - return ONLY the minutes as integer (e.g. 30:01 → 30, 11:01 → 11)
-- km: the DISTANZ/DISTANCE value as float (e.g. 15.03)
-- speed: the KM/H value as float (e.g. 26.1)
-- kcal: the KILOJOULE value divided by 4.184, rounded to integer (e.g. 1369 kJ → 327 kcal)
-
-Return ONLY this JSON, nothing else, no markdown:
-{"time_min": 30, "km": 15.03, "speed": 26.1, "kcal": 327}` }
+          { text: `This is a Sportsline exercise bike display. Extract values and return ONLY raw JSON, no markdown, no backticks, no explanation:
+{"time_min": <ZEIT minutes as integer, e.g. 30>, "km": <DISTANZ float, e.g. 15.03>, "speed": <KM/H float, e.g. 26.1>, "kcal": <KILOJOULE divided by 4.184 as integer, e.g. 327>}
+If value not visible use null. time_min must be integer (30:01 → 30). kcal must be kJ/4.184 rounded.` }
         ]}],
-        generationConfig: {
-          temperature: 0,
-          maxOutputTokens: 100,
-          responseMimeType: 'application/json'
-        }
+        generationConfig: { temperature: 0, maxOutputTokens: 100 }
       })
     });
 
     const data = await response.json();
-    console.log('Raw:', JSON.stringify(data).slice(0, 500));
+    console.log('Gemini status:', response.status);
 
-    if (!response.ok) return res.status(500).json({ error: data.error?.message, raw: data });
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    console.log('Text:', text);
-
-    const match = text.match(/\{[\s\S]*?\}/);
-    if (!match) return res.status(500).json({ error: 'No JSON', text });
-
-    const raw = JSON.parse(match[0]);
-
-    // Fix time_min if it came as "30:01" string
-    let time_min = raw.time_min;
-    if (typeof time_min === 'string' && time_min.includes(':')) {
-      time_min = parseInt(time_min.split(':')[0]);
-    } else {
-      time_min = parseInt(time_min) || null;
+    if (!response.ok) {
+      console.error('Gemini error:', JSON.stringify(data));
+      return res.status(500).json({ error: data.error?.message || 'Gemini API error' });
     }
 
-    // Fix kcal if it came as raw kJ (>500 means it's kJ not kcal)
-    let kcal = raw.kcal;
-    if (kcal && kcal > 500) kcal = Math.round(kcal / 4.184);
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    console.log('Gemini text:', text);
 
-    res.status(200).json({
-      time_min,
-      km: raw.km || null,
-      speed: raw.speed || null,
-      kcal: kcal || null
-    });
+    // Parse JSON safely
+    try {
+      // Clean markdown if present
+      const clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const match = clean.match(/\{[\s\S]*\}/);
+      if (!match) return res.status(500).json({ error: 'No JSON in response', text });
+
+      const raw = JSON.parse(match[0]);
+      console.log('Parsed raw:', JSON.stringify(raw));
+
+      // Normalize time_min
+      let time_min = raw.time_min;
+      if (typeof time_min === 'string' && time_min.includes(':')) {
+        time_min = parseInt(time_min.split(':')[0]);
+      } else {
+        time_min = time_min != null ? parseInt(time_min) : null;
+      }
+
+      // Normalize kcal (if raw kJ > 500, convert)
+      let kcal = raw.kcal;
+      if (kcal != null && kcal > 500) kcal = Math.round(kcal / 4.184);
+
+      const result = {
+        time_min: time_min || null,
+        km: raw.km || null,
+        speed: raw.speed || null,
+        kcal: kcal || null
+      };
+      console.log('Result:', JSON.stringify(result));
+      return res.status(200).json(result);
+
+    } catch (parseErr) {
+      console.error('Parse error:', parseErr.message, 'text was:', text);
+      return res.status(500).json({ error: 'JSON parse failed', text, parseError: parseErr.message });
+    }
 
   } catch (err) {
-    console.error('Error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error('Handler error:', err.message);
+    return res.status(500).json({ error: err.message });
   }
 }
