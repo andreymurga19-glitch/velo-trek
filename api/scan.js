@@ -19,63 +19,49 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents: [{ parts: [
           { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
-          { text: `This is a Sportsline exercise bike display. Extract values and return ONLY raw JSON, no markdown, no backticks, no explanation:
-{"time_min": <ZEIT minutes as integer, e.g. 30>, "km": <DISTANZ float, e.g. 15.03>, "speed": <KM/H float, e.g. 26.1>, "kcal": <KILOJOULE divided by 4.184 as integer, e.g. 327>}
-If value not visible use null. time_min must be integer (30:01 → 30). kcal must be kJ/4.184 rounded.` }
+          { text: 'Read this exercise bike display. Return ONLY this JSON with no other text: {"time_min":30,"km":15.03,"speed":26.1,"kcal":327} - time_min is ZEIT minutes only (integer), km is DISTANZ (float), speed is KM/H (float), kcal is KILOJOULE/4.184 rounded (integer). Use null if not visible.' }
         ]}],
-        generationConfig: { temperature: 0, maxOutputTokens: 100 }
+        generationConfig: { temperature: 0, maxOutputTokens: 60 }
       })
     });
 
     const data = await response.json();
-    console.log('Gemini status:', response.status);
 
     if (!response.ok) {
-      console.error('Gemini error:', JSON.stringify(data));
-      return res.status(500).json({ error: data.error?.message || 'Gemini API error' });
+      return res.status(500).json({ error: data.error?.message || 'Gemini error' });
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    console.log('Gemini text:', text);
+    const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    console.log('text length:', text.length, 'first100:', text.slice(0, 100));
 
-    // Parse JSON safely
-    try {
-      // Clean markdown if present
-      const clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      const match = clean.match(/\{[\s\S]*\}/);
-      if (!match) return res.status(500).json({ error: 'No JSON in response', text });
-
-      const raw = JSON.parse(match[0]);
-      console.log('Parsed raw:', JSON.stringify(raw));
-
-      // Normalize time_min
-      let time_min = raw.time_min;
-      if (typeof time_min === 'string' && time_min.includes(':')) {
-        time_min = parseInt(time_min.split(':')[0]);
-      } else {
-        time_min = time_min != null ? parseInt(time_min) : null;
-      }
-
-      // Normalize kcal (if raw kJ > 500, convert)
-      let kcal = raw.kcal;
-      if (kcal != null && kcal > 500) kcal = Math.round(kcal / 4.184);
-
-      const result = {
-        time_min: time_min || null,
-        km: raw.km || null,
-        speed: raw.speed || null,
-        kcal: kcal || null
-      };
-      console.log('Result:', JSON.stringify(result));
-      return res.status(200).json(result);
-
-    } catch (parseErr) {
-      console.error('Parse error:', parseErr.message, 'text was:', text);
-      return res.status(500).json({ error: 'JSON parse failed', text, parseError: parseErr.message });
+    // Extract JSON object
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end === -1) {
+      return res.status(500).json({ error: 'No JSON braces found', text: text.slice(0, 200) });
     }
+
+    const jsonStr = text.slice(start, end + 1);
+    console.log('jsonStr:', jsonStr);
+
+    const raw = JSON.parse(jsonStr);
+
+    // Fix time if string like "30:01"
+    let time_min = raw.time_min;
+    if (typeof time_min === 'string' && time_min.includes(':')) {
+      time_min = parseInt(time_min.split(':')[0]);
+    } else {
+      time_min = time_min != null ? parseInt(time_min) : null;
+    }
+
+    // Fix kcal if raw kJ
+    let kcal = raw.kcal;
+    if (kcal != null && kcal > 500) kcal = Math.round(kcal / 4.184);
+
+    return res.status(200).json({ time_min, km: raw.km || null, speed: raw.speed || null, kcal: kcal || null });
 
   } catch (err) {
-    console.error('Handler error:', err.message);
+    console.error('Error:', err.message);
     return res.status(500).json({ error: err.message });
   }
 }
