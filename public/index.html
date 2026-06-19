@@ -549,18 +549,48 @@ function renderCardioHistory() {
   renderCardioChart(sessions);
   const list = document.getElementById('cSessionsList');
   if(!sessions.length){list.innerHTML='<div class="empty-state"><div class="icon">🚴</div><p>Немає тренувань</p></div>';return;}
-  list.innerHTML = sessions.map(s=>{
-    const d = new Date(s.date+'T12:00:00');
-    return `<div class="session-item">
-      <div class="session-date"><div class="day">${d.getDate()}</div><div class="month">${d.toLocaleString('uk-UA',{month:'short'})}</div></div>
-      <div class="session-divider"></div>
-      <div class="session-metrics">
-        <div class="session-metric"><div class="val">${s.km.toFixed(1)}</div><div class="key">км</div></div>
-        <div class="session-metric"><div class="val">${Math.round(s.time_min)}</div><div class="key">хв</div></div>
-        ${s.kcal?`<div class="session-metric"><div class="val">${Math.round(s.kcal)}</div><div class="key">ккал</div></div>`:''}
-        ${(s.km&&s.time_min)?`<div class="session-metric"><div class="val">${((s.km/(s.time_min/60))).toFixed(1)}</div><div class="key">км/г</div></div>`:''}
+  // Group by date
+  const grouped = {};
+  sessions.forEach(s => {
+    if (!grouped[s.date]) grouped[s.date] = [];
+    grouped[s.date].push(s);
+  });
+
+  list.innerHTML = Object.keys(grouped).sort((a,b)=>b.localeCompare(a)).map(date => {
+    const daySessions = grouped[date];
+    const d = new Date(date+'T12:00:00');
+    const totalKm = daySessions.reduce((s,x)=>s+x.km,0);
+    const totalMin = daySessions.reduce((s,x)=>s+x.time_min,0);
+    const totalKcal = daySessions.reduce((s,x)=>s+x.kcal,0);
+    const avgSpeed = totalKm/(totalMin/60);
+
+    const subRows = daySessions.length > 1 ? daySessions.map((s,i) => {
+      const spd = s.km/(s.time_min/60);
+      return `<div style="display:flex;gap:12px;padding:6px 0 0 0;border-top:1px solid var(--border);margin-top:6px;font-size:12px;color:var(--muted)">
+        <span style="min-width:52px;color:var(--muted)">Заїзд ${i+1}</span>
+        <span>${s.km.toFixed(1)}км</span>
+        <span>${Math.round(s.time_min)}хв</span>
+        ${s.kcal?`<span>${Math.round(s.kcal)}ккал`:''}
+        <span>${spd.toFixed(1)}км/г</span>
+        <button class="session-delete" onclick="deleteCardio(${s.id})" style="margin-left:auto">🗑</button>
+      </div>`;
+    }).join('') : '';
+
+    const deleteBtn = daySessions.length === 1 ? `<button class="session-delete" onclick="deleteCardio(${daySessions[0].id})">🗑</button>` : '';
+
+    return `<div class="session-item" style="flex-direction:column;align-items:stretch">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="session-date"><div class="day">${d.getDate()}</div><div class="month">${d.toLocaleString('uk-UA',{month:'short'})}</div></div>
+        <div class="session-divider"></div>
+        <div class="session-metrics">
+          <div class="session-metric"><div class="val">${totalKm.toFixed(1)}</div><div class="key">км</div></div>
+          <div class="session-metric"><div class="val">${Math.round(totalMin)}</div><div class="key">хв</div></div>
+          ${totalKcal?`<div class="session-metric"><div class="val">${Math.round(totalKcal)}</div><div class="key">ккал</div></div>`:''}
+          <div class="session-metric"><div class="val">${avgSpeed.toFixed(1)}</div><div class="key">км/г</div></div>
+        </div>
+        ${deleteBtn}
       </div>
-      <button class="session-delete" onclick="deleteCardio(${s.id})">🗑</button>
+      ${subRows}
     </div>`;
   }).join('');
 }
