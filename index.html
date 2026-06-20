@@ -821,11 +821,28 @@ function parseVoiceInput(text) {
   if(!foundName) foundName=text.replace(/\d+([.,]\d+)?/g,'').trim()||text;
 
   if(reps>0){
-    // Pre-fill form
+    // Set exercise name
     document.getElementById('exName').value = capitalize(foundName);
-    document.getElementById('reps0').value = reps;
-    if(weight>0) document.getElementById('weight0').value = weight;
-    document.getElementById('voiceStatus').textContent='✅ Перевір і натисни "Додати вправу"';
+    
+    // Find last empty row or add new one
+    const rows = document.querySelectorAll('#setsContainer .exercise-form');
+    const lastRow = rows[rows.length-1];
+    const lastRepsEl = lastRow.querySelector('[id^="reps"]');
+    const lastWeightEl = lastRow.querySelector('[id^="weight"]');
+    
+    if(lastRepsEl && lastRepsEl.value) {
+      // Last row already filled — add new row
+      addSetRow();
+      const newRows = document.querySelectorAll('#setsContainer .exercise-form');
+      const newRow = newRows[newRows.length-1];
+      newRow.querySelector('[id^="reps"]').value = reps;
+      if(weight>0) newRow.querySelector('[id^="weight"]').value = weight;
+    } else {
+      // Fill empty last row
+      lastRepsEl.value = reps;
+      if(weight>0) lastWeightEl.value = weight;
+    }
+    document.getElementById('voiceStatus').textContent='✅ Підхід додано! Говори наступний або натисни "Додати вправу"';
   } else {
     document.getElementById('exName').value = capitalize(text);
     document.getElementById('voiceStatus').textContent='✅ Додай повтори і вагу';
