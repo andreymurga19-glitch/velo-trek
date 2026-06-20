@@ -876,10 +876,13 @@ function renderStrengthHistory() {
   if(!workouts.length){list.innerHTML='<div class="empty-state"><div class="icon">🏋️</div><p>Немає тренувань</p></div>';return;}
   list.innerHTML=workouts.map(w=>{
     const d=new Date(w.date+'T12:00:00');
-    const exList=w.exercises.map(ex=>`
+    const exList=w.exercises.map((ex,ei)=>`
       <div class="exercise-block">
-        <div class="exercise-name">${ex.name}</div>
-        <div class="sets-row">${ex.sets.map(s=>`<div class="set-badge">${s.reps}×${s.weight}кг</div>`).join('')}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div class="exercise-name">${ex.name}</div>
+          <button onclick="editExercise(${w.id},${ei})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">✏️</button>
+        </div>
+        <div class="sets-row">${ex.sets.map((s,si)=>`<div class="set-badge" onclick="editSet(${w.id},${ei},${si})" style="cursor:pointer">${s.reps}×${s.weight}кг</div>`).join('')}</div>
       </div>`).join('');
     return `<div class="workout-card">
       <div class="workout-header">
@@ -892,6 +895,36 @@ function renderStrengthHistory() {
       ${exList}
     </div>`;
   }).join('');
+}
+
+function editExercise(wid, ei) {
+  const workouts = getStrength();
+  const w = workouts.find(x=>x.id===wid);
+  if(!w) return;
+  const ex = w.exercises[ei];
+  const newName = prompt('Назва вправи:', ex.name);
+  if(newName && newName.trim()) {
+    ex.name = newName.trim();
+    saveStrengthData(workouts);
+    renderStrengthHistory();
+    showToast('✅ Збережено!');
+  }
+}
+
+function editSet(wid, ei, si) {
+  const workouts = getStrength();
+  const w = workouts.find(x=>x.id===wid);
+  if(!w) return;
+  const set = w.exercises[ei].sets[si];
+  const newReps = prompt('Повторень:', set.reps);
+  if(newReps === null) return;
+  const newWeight = prompt('Вага (кг):', set.weight);
+  if(newWeight === null) return;
+  set.reps = parseInt(newReps) || set.reps;
+  set.weight = parseFloat(newWeight) || set.weight;
+  saveStrengthData(workouts);
+  renderStrengthHistory();
+  showToast('✅ Збережено!');
 }
 
 function deleteWorkout(id){
