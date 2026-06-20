@@ -698,8 +698,12 @@ function removeSetRow(i) {
 }
 
 function saveExercise() {
-  const name = document.getElementById('exName').value.trim();
-  if(!name){showToast('Введи назву вправи',true);return;}
+  let name = document.getElementById('exName').value.trim();
+  if(!name || name === 'Повторень кг' || name === 'Повт.' || name.length < 2){
+    showToast('Введи назву вправи',true);
+    document.getElementById('exName').focus();
+    return;
+  }
   const sets = [];
   document.querySelectorAll('#setsContainer .exercise-form').forEach((row,i)=>{
     const repsEl = row.querySelector('[id^="reps"]');
