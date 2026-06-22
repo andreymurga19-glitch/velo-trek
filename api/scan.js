@@ -19,11 +19,11 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           contents: [{ parts: [
             { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
-            { text: 'Read this exercise bike display. Return ONLY JSON: {"time_min":30,"km":15.03,"speed":26.1,"kcal":327,"watt":74} - time_min=ZEIT minutes only as integer (30:01→30), km=DISTANZ float, speed=KM/H float, kcal=KILOJOULE divided by 4.184 as integer, watt=WATT integer. Use null if not visible.' }
+            { text: 'Read this exercise bike display. Return ONLY JSON: {"time_min":30,"km":15.03,"speed":26.1,"kcal":327} - time_min=ZEIT minutes (integer), km=DISTANZ (float), speed=KM/H (float), kcal=KILOJOULE/4.184 rounded (integer). null if not visible.' }
           ]}],
           generationConfig: {
             temperature: 0,
-            maxOutputTokens: 512,
+            maxOutputTokens: 100,
             thinkingConfig: { thinkingBudget: 0 }
           }
         })
@@ -31,7 +31,6 @@ export default async function handler(req, res) {
     );
 
     const data = await response.json();
-    console.log('status:', response.status);
     if (!response.ok) return res.status(500).json({ error: data.error?.message || 'Gemini error' });
 
     const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
@@ -53,13 +52,7 @@ export default async function handler(req, res) {
     let kcal = raw.kcal;
     if (kcal != null && kcal > 500) kcal = Math.round(kcal / 4.184);
 
-    return res.status(200).json({
-      time_min,
-      km: raw.km || null,
-      speed: raw.speed || null,
-      kcal: kcal || null,
-      watt: raw.watt || null
-    });
+    return res.status(200).json({ time_min, km: raw.km || null, speed: raw.speed || null, kcal: kcal || null });
 
   } catch (err) {
     console.error('Error:', err.message);
