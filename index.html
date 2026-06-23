@@ -1015,6 +1015,13 @@ function showSDay(ds){
   });
   saveCardioData(existing);
 
+  // Fix wrong kcal values
+  const fixData = getCardio().map(s => {
+    if(s.date === '2026-06-23' && s.kcal < 100) { s.kcal = 478; }
+    return s;
+  });
+  saveCardioData(fixData);
+
   // Strength workout
   const sw=getStrength();
   if(!sw.find(w=>w.id===1750240100000)){
