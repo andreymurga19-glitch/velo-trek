@@ -19,7 +19,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           contents: [{ parts: [
             { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
-            { text: 'Read this exercise bike display. Return ONLY JSON: {"time_min":30,"km":15.03,"speed":26.1,"kcal":327} - time_min=ZEIT minutes (integer), km=DISTANZ (float), speed=KM/H (float), kcal=KILOJOULE/4.184 rounded (integer). null if not visible.' }
+            { text: 'Read this exercise bike display. Return ONLY JSON: {"time_min":40,"km":22.02,"speed":33.0,"kj":2001} - time_min=ZEIT minutes only as integer (40:14→40), km=DISTANZ float, speed=KM/H float, kj=KILOJOULE raw integer value (do NOT divide, return as-is). null if not visible.' }
           ]}],
           generationConfig: {
             temperature: 0,
@@ -41,6 +41,7 @@ export default async function handler(req, res) {
     if (start === -1 || end === -1) return res.status(500).json({ error: 'No JSON', text });
 
     const raw = JSON.parse(text.slice(start, end + 1));
+    console.log('raw:', JSON.stringify(raw));
 
     let time_min = raw.time_min;
     if (typeof time_min === 'string' && time_min.includes(':')) {
@@ -49,10 +50,11 @@ export default async function handler(req, res) {
       time_min = time_min != null ? parseInt(time_min) : null;
     }
 
-    let kcal = raw.kcal;
-    if (kcal != null && kcal > 500) kcal = Math.round(kcal / 4.184);
+    // kj field → divide by 4.184 to get kcal
+    const kj = raw.kj != null ? raw.kj : raw.kcal;
+    const kcal = kj != null ? Math.round(kj / 4.184) : null;
 
-    return res.status(200).json({ time_min, km: raw.km || null, speed: raw.speed || null, kcal: kcal || null });
+    return res.status(200).json({ time_min, km: raw.km || null, speed: raw.speed || null, kcal });
 
   } catch (err) {
     console.error('Error:', err.message);
