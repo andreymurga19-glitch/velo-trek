@@ -562,7 +562,14 @@ function filterByPeriod(arr, period) {
   const now = new Date();
   return arr.filter(s=>{
     const d = new Date(s.date+'T12:00:00');
-    if(period==='week'){const w=new Date(now);w.setDate(w.getDate()-7);return d>=w;}
+    if(period==='week'){
+      // Calendar week Mon-Sun
+      const day = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0=Mon
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - day);
+      weekStart.setHours(0,0,0,0);
+      return d >= weekStart;
+    }
     if(period==='month'){return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();}
     return true;
   });
