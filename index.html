@@ -1011,7 +1011,6 @@ function showSDay(ds){
 (function(){
   // Cardio sessions
   const existing=getCardio();
-  const ids=existing.map(s=>s.date+'_'+s.km);
   const preload=[
     {id:1750240001000,date:'2026-06-18',time_min:11,km:5.06,kcal:110,speed:27.6},
     {id:1750240002000,date:'2026-06-18',time_min:21,km:10.10,kcal:220,speed:28.9},
@@ -1024,7 +1023,8 @@ function showSDay(ds){
     {id:1750932001000,date:'2026-06-26',time_min:30,km:16.1,kcal:349,speed:32.1},
   ];
   preload.forEach(s=>{
-    if(!ids.includes(s.date+'_'+s.km)) existing.push(s);
+    const i=existing.findIndex(e=>e.id===s.id||(e.date===s.date&&e.km===s.km));
+    if(i>=0) existing[i]=s; else existing.push(s);
   });
   saveCardioData(existing);
 
