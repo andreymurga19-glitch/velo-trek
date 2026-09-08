@@ -660,7 +660,7 @@ function deleteCardio(id) {
 
 // Cardio Calendar
 let cCalY, cCalM;
-function initCCal(){const n=new Date();cCalY=n.getFullYear();cCalM=n.getMonth();}
+function initCCal(){const n=new Date();cCalY=n.getFullYear();cCalM=n.getMonth();const d=getCardio().map(s=>s.date).sort().pop();if(d){cCalY=+d.slice(0,4);cCalM=+d.slice(5,7)-1;}}
 function calPrev(t){if(t==='c'){cCalM--;if(cCalM<0){cCalM=11;cCalY--;}renderCardioCalendar();}else{sCalM--;if(sCalM<0){sCalM=11;sCalY--;}renderStrengthCalendar();}}
 function calNext(t){if(t==='c'){cCalM++;if(cCalM>11){cCalM=0;cCalY++;}renderCardioCalendar();}else{sCalM++;if(sCalM>11){sCalM=0;sCalY++;}renderStrengthCalendar();}}
 
@@ -962,7 +962,7 @@ function deleteWorkout(id){
 
 // Strength Calendar
 let sCalY, sCalM;
-function initSCal(){const n=new Date();sCalY=n.getFullYear();sCalM=n.getMonth();}
+function initSCal(){const n=new Date();sCalY=n.getFullYear();sCalM=n.getMonth();const d=getStrength().map(s=>s.date).sort().pop();if(d){sCalY=+d.slice(0,4);sCalM=+d.slice(5,7)-1;}}
 
 function renderStrengthCalendar(){
   const byDate={};
