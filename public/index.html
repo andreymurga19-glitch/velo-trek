@@ -314,9 +314,9 @@
   <!-- Cardio History -->
   <div class="page" id="cardio-history">
     <div class="period-selector">
-      <button class="period-btn active" onclick="setCPeriod('week',this)">Тиждень</button>
+      <button class="period-btn" onclick="setCPeriod('week',this)">Тиждень</button>
       <button class="period-btn" onclick="setCPeriod('month',this)">Місяць</button>
-      <button class="period-btn" onclick="setCPeriod('all',this)">Всі</button>
+      <button class="period-btn active" onclick="setCPeriod('all',this)">Всі</button>
     </div>
     <div class="stats-row">
       <div class="stat-card"><div class="num" id="cTotalKm">0</div><div class="lbl">Км</div></div>
@@ -387,9 +387,9 @@
   <!-- Strength History -->
   <div class="page" id="strength-history">
     <div class="period-selector">
-      <button class="period-btn active-p" onclick="setSPeriod('week',this)">Тиждень</button>
+      <button class="period-btn" onclick="setSPeriod('week',this)">Тиждень</button>
       <button class="period-btn" onclick="setSPeriod('month',this)">Місяць</button>
-      <button class="period-btn" onclick="setSPeriod('all',this)">Всі</button>
+      <button class="period-btn active-p" onclick="setSPeriod('all',this)">Всі</button>
     </div>
     <div class="stats-row">
       <div class="stat-card"><div class="num purple" id="sTotalWorkouts">0</div><div class="lbl">Тренувань</div></div>
@@ -550,7 +550,7 @@ function saveCardio() {
   showToast('✅ Кардіо збережено!');
 }
 
-let cPeriod = 'week';
+let cPeriod = 'all';
 function setCPeriod(p,btn) {
   cPeriod=p;
   document.querySelectorAll('#cardio-history .period-btn').forEach(b=>{b.classList.remove('active');});
@@ -882,7 +882,7 @@ function parseVoiceInput(text) {
 function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 
 // Strength History
-let sPeriod='week';
+let sPeriod='all';
 function setSPeriod(p,btn){
   sPeriod=p;
   document.querySelectorAll('#strength-history .period-btn').forEach(b=>{b.classList.remove('active-p');b.classList.remove('active');});
