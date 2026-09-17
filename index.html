@@ -547,6 +547,7 @@ function saveCardio() {
   const arr = getCardio(); arr.push(s); saveCardioData(arr);
   ['cTime','cKm','cCal','cSpeed','cWatt','cLevel'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cDate').value = todayStr();
+  saveDraft();
   showToast('✅ Кардіо збережено!');
 }
 
@@ -717,10 +718,12 @@ function addSetRow() {
     <button onclick="removeSetRow(${setRowCount})" style="background:var(--danger);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">−</button>`;
   c.appendChild(div);
   setRowCount++;
+  saveDraft();
 }
 
 function removeSetRow(i) {
   document.getElementById(`setRow${i}`).remove();
+  saveDraft();
 }
 
 function saveExercise() {
@@ -749,6 +752,7 @@ function saveExercise() {
       <button onclick="addSetRow()" style="background:var(--purple);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">+</button>
     </div>`;
   setRowCount=1;
+  saveDraft();
   showToast('Вправу додано!');
 }
 
@@ -773,6 +777,7 @@ function renderCurrentWorkout() {
 function removeExercise(i) {
   currentExercises.splice(i,1);
   renderCurrentWorkout();
+  saveDraft();
 }
 
 function saveWorkout() {
@@ -786,6 +791,7 @@ function saveWorkout() {
   currentExercises=[];
   renderCurrentWorkout();
   document.getElementById('sDate').value=todayStr();
+  saveDraft();
   showToast('✅ Тренування збережено!');
 }
 
@@ -1050,8 +1056,72 @@ function showSDay(ds){
   }
 })();
 
+// ===== ЧЕРНЕТКА: автозбереження незавершеного вводу =====
+const D_KEY = 'velo_draft_v1';
+const dv = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+const dset = (id, v) => { const e = document.getElementById(id); if (e && v != null) e.value = v; };
+const C_FIELDS = ['cDate','cTime','cKm','cCal','cSpeed','cWatt','cLevel'];
+
+function readSetRows() {
+  return [...document.querySelectorAll('#setsContainer .exercise-form')].map(r => ({
+    reps: r.querySelector('[id^="reps"]')?.value || '',
+    weight: r.querySelector('[id^="weight"]')?.value || ''
+  }));
+}
+
+function renderSetRows(rows) {
+  const c = document.getElementById('setsContainer');
+  if (!c) return;
+  if (!rows || !rows.length) rows = [{reps:'', weight:''}];
+  const num = v => String(v == null ? '' : v).replace(/[^0-9.]/g, '');
+  c.innerHTML = rows.map((r, i) => {
+    const btn = i === 0
+      ? '<button onclick="addSetRow()" style="background:var(--purple);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">+</button>'
+      : '<button onclick="removeSetRow(' + i + ')" style="background:var(--danger);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">−</button>';
+    return '<div class="exercise-form" id="setRow' + i + '">'
+      + '<input class="ex-input" placeholder="Повт." type="number" min="1" id="reps' + i + '" value="' + num(r.reps) + '">'
+      + '<input class="ex-input" placeholder="Вага кг" type="number" step="0.5" id="weight' + i + '" value="' + num(r.weight) + '">'
+      + btn + '</div>';
+  }).join('');
+  setRowCount = rows.length;
+}
+
+function saveDraft() {
+  try {
+    localStorage.setItem(D_KEY, JSON.stringify({
+      exercises: currentExercises,
+      exName: dv('exName'),
+      sDate: dv('sDate'),
+      rows: readSetRows(),
+      cardio: C_FIELDS.reduce((o, id) => (o[id] = dv(id), o), {})
+    }));
+  } catch (e) {}
+}
+
+function restoreDraft() {
+  let d;
+  try { d = JSON.parse(localStorage.getItem(D_KEY) || '{}'); } catch { return; }
+  if (!d || typeof d !== 'object') return;
+  if (Array.isArray(d.exercises) && d.exercises.length) {
+    currentExercises = d.exercises;
+    renderCurrentWorkout();
+  }
+  dset('exName', d.exName);
+  if (d.sDate) dset('sDate', d.sDate);
+  if (Array.isArray(d.rows) && d.rows.some(r => r.reps || r.weight)) renderSetRows(d.rows);
+  if (d.cardio) C_FIELDS.forEach(id => { if (d.cardio[id]) dset(id, d.cardio[id]); });
+}
+
+let draftTimer = null;
+function queueDraft() { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 400); }
+document.addEventListener('input', queueDraft);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveDraft(); });
+window.addEventListener('pagehide', saveDraft);
+window.addEventListener('blur', saveDraft);
+
 initCCal();
 initSCal();
+restoreDraft();
 </script>
 </body>
 </html>
