@@ -705,6 +705,7 @@ function showCDay(ds) {
 
 // ===== STRENGTH =====
 let currentExercises = []; // exercises in current session being built
+let editingWorkoutId = null; // id тренування, яке продовжуємо (null = нове)
 let setRowCount = 1;
 
 function addSetRow() {
@@ -762,8 +763,18 @@ function renderCurrentWorkout() {
     document.getElementById('saveWorkoutBtn').style.display='none';
     return;
   }
-  document.getElementById('saveWorkoutBtn').style.display='flex';
-  let html = '<div class="workout-card"><div class="workout-header"><div class="workout-title">Поточне тренування</div></div>';
+  const sBtn = document.getElementById('saveWorkoutBtn');
+  sBtn.style.display='flex';
+  const isEdit = editingWorkoutId !== null;
+  sBtn.textContent = isEdit ? '✅ Зберегти зміни' : '✅ Зберегти тренування';
+  let cwTitle = 'Поточне тренування', cwCancel = '';
+  if(isEdit){
+    const ew = getStrength().find(x=>x.id===editingWorkoutId);
+    const ed = ew ? new Date(ew.date+'T12:00:00').toLocaleDateString('uk-UA',{day:'numeric',month:'long'}) : '';
+    cwTitle = 'Продовжуємо: ' + ed;
+    cwCancel = '<button onclick="cancelEditing()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px">Скасувати</button>';
+  }
+  let html = '<div class="workout-card"><div class="workout-header"><div class="workout-title">'+cwTitle+'</div>'+cwCancel+'</div>';
   currentExercises.forEach((ex,i)=>{
     html+=`<div class="exercise-block">
       <div class="exercise-name">${ex.name} <button onclick="removeExercise(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;">✕</button></div>
@@ -782,17 +793,24 @@ function removeExercise(i) {
 
 function saveWorkout() {
   if(!currentExercises.length){showToast('Додай вправи',true);return;}
-  const workout = {
-    id: Date.now(),
-    date: document.getElementById('sDate').value||todayStr(),
-    exercises: [...currentExercises]
-  };
-  const arr = getStrength(); arr.push(workout); saveStrengthData(arr);
+  const date = document.getElementById('sDate').value||todayStr();
+  const arr = getStrength();
+  const target = editingWorkoutId===null ? null : arr.find(x=>x.id===editingWorkoutId);
+  if(target){
+    target.exercises = [...currentExercises];
+    target.date = date;
+  } else {
+    arr.push({ id: Date.now(), date, exercises: [...currentExercises] });
+  }
+  saveStrengthData(arr);
+  const wasEdit = !!target;
+  editingWorkoutId = null;
   currentExercises=[];
   renderCurrentWorkout();
   document.getElementById('sDate').value=todayStr();
   saveDraft();
-  showToast('✅ Тренування збережено!');
+  renderStrengthHistory();
+  showToast(wasEdit ? '✅ Тренування оновлено!' : '✅ Тренування збережено!');
 }
 
 // VOICE
@@ -921,6 +939,7 @@ function renderStrengthHistory() {
         <div class="workout-title">${d.toLocaleDateString('uk-UA',{day:'numeric',month:'short'})}</div>
         <div style="display:flex;gap:8px;align-items:center">
           <div class="workout-date">${w.exercises.length} вправ</div>
+          <button onclick="continueWorkout(${w.id})" style="background:var(--purple);color:#fff;border:none;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;white-space:nowrap">+ Дописати</button>
           <button class="session-delete" onclick="deleteWorkout(${w.id})">🗑</button>
         </div>
       </div>
@@ -957,6 +976,32 @@ function editSet(wid, ei, si) {
   saveStrengthData(workouts);
   renderStrengthHistory();
   showToast('✅ Збережено!');
+}
+
+function continueWorkout(id){
+  const w = getStrength().find(x=>x.id===id);
+  if(!w){showToast('Тренування не знайдено',true);return;}
+  if(currentExercises.length && editingWorkoutId!==id){
+    if(!confirm('Незбережене поточне тренування буде замінено. Продовжити?')) return;
+  }
+  editingWorkoutId = id;
+  currentExercises = JSON.parse(JSON.stringify(w.exercises||[]));
+  const sd = document.getElementById('sDate');
+  if(sd) sd.value = w.date;
+  renderCurrentWorkout();
+  switchPage('strength','add');
+  saveDraft();
+  showToast('Дописуй вправи');
+}
+
+function cancelEditing(){
+  editingWorkoutId = null;
+  currentExercises = [];
+  const sd = document.getElementById('sDate');
+  if(sd) sd.value = todayStr();
+  renderCurrentWorkout();
+  saveDraft();
+  showToast('Скасовано');
 }
 
 function deleteWorkout(id){
@@ -1090,6 +1135,7 @@ function saveDraft() {
   try {
     localStorage.setItem(D_KEY, JSON.stringify({
       exercises: currentExercises,
+      editingWorkoutId,
       exName: dv('exName'),
       sDate: dv('sDate'),
       rows: readSetRows(),
@@ -1102,6 +1148,7 @@ function restoreDraft() {
   let d;
   try { d = JSON.parse(localStorage.getItem(D_KEY) || '{}'); } catch { return; }
   if (!d || typeof d !== 'object') return;
+  if (d.editingWorkoutId != null) editingWorkoutId = d.editingWorkoutId;
   if (Array.isArray(d.exercises) && d.exercises.length) {
     currentExercises = d.exercises;
     renderCurrentWorkout();
