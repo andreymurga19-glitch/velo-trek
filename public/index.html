@@ -359,6 +359,9 @@
       <button class="btn btn-purple" id="startWorkoutBtn" onclick="startWorkout()">▶ Почати тренування</button>
     </div>
 
+    <!-- Current workout: зверху, вправи дописуються в нього -->
+    <div id="currentWorkoutPreview"></div>
+
     <div class="form-card">
       <h3>✏️ Вправа</h3>
       <div style="margin-bottom:10px">
@@ -372,8 +375,6 @@
       <button class="btn btn-purple" onclick="saveExercise()">💪 Додати вправу</button>
     </div>
 
-    <!-- Current workout preview -->
-    <div id="currentWorkoutPreview"></div>
 
     <button class="btn btn-green" onclick="saveWorkout()" id="saveWorkoutBtn" style="margin-top:12px;display:none">🏁 Закінчити тренування</button>
   </div>
@@ -785,7 +786,7 @@ function startWorkout() {
   workoutStartedAt = Date.now();
   const sd = document.getElementById('sDate');
   if (!sd.value) sd.value = todayStr();
-  renderWorkoutState();
+  renderCurrentWorkout();
   saveDraft();
   showToast('Тренування почалось 💪');
 }
@@ -805,7 +806,12 @@ function cancelWorkout() {
 
 function renderCurrentWorkout() {
   const box = document.getElementById('currentWorkoutPreview');
-  if (!currentExercises.length) { box.innerHTML = ''; renderWorkoutState(); return; }
+  if (!currentExercises.length) {
+    box.innerHTML = (workoutStartedAt !== null && editingWorkoutId === null)
+      ? '<div class="workout-card"><div class="workout-header"><div class="workout-title">Поточне тренування</div></div><div class="hold-hint" style="margin:0">Додай першу вправу нижче 👇</div></div>'
+      : '';
+    renderWorkoutState(); return;
+  }
   let cwTitle = 'Поточне тренування', cwCancel = '';
   if (editingWorkoutId !== null) {
     const ew = getStrength().find(x=>x.id===editingWorkoutId);
