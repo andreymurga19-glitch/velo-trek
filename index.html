@@ -171,19 +171,6 @@
   }
   .set-badge.pr { border-color: var(--purple); color: var(--purple); }
 
-  /* VOICE */
-  .voice-btn {
-    width: 72px; height: 72px; border-radius: 50%; border: none;
-    background: var(--purple); color: #fff; font-size: 28px;
-    cursor: pointer; transition: all 0.2s; display: flex;
-    align-items: center; justify-content: center; margin: 0 auto 12px;
-    box-shadow: 0 0 0 0 rgba(168,85,247,0.4);
-  }
-  .voice-btn.listening {
-    animation: pulse 1s infinite;
-    background: var(--danger);
-  }
-
   @keyframes spin { to { transform: rotate(360deg); } }
   .upload-zone {
     border: 2px dashed var(--border); border-radius: 16px;
@@ -193,13 +180,21 @@
   .upload-zone:hover { border-color: var(--accent); background: rgba(249,115,22,0.05); }
   @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.4); } 50% { box-shadow: 0 0 0 16px rgba(168,85,247,0); } }
 
-  .voice-status { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 12px; min-height: 20px; }
-  .voice-result { background: var(--bg); border-radius: 10px; padding: 12px; font-size: 14px; color: var(--text); margin-bottom: 12px; display: none; min-height: 44px; }
-
   /* ADD EXERCISE FORM */
-  .exercise-form { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .exercise-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
   .ex-input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; outline: none; width: 100%; }
   .ex-input:focus { border-color: var(--purple); }
+
+  .add-set-btn { width: 100%; padding: 10px; margin-bottom: 6px; background: transparent; color: var(--purple); border: 1px dashed var(--purple); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .hold-hint { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 4px; }
+  #setsContainer .exercise-form, .exercise-block { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  #setsContainer .exercise-form.holding .ex-input { background: rgba(239,68,68,0.3); border-color: var(--danger); transition: background 0.6s linear, border-color 0.6s linear; }
+  .exercise-block { border-radius: 8px; }
+  .exercise-block.holding { background: rgba(239,68,68,0.22); transition: background 0.6s linear; }
+  .workout-timer { text-align: center; margin: 4px 0 6px; }
+  .timer-value { font-family: 'Bebas Neue', sans-serif; font-size: 56px; letter-spacing: 2px; color: var(--purple); line-height: 1; }
+  .timer-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .timer-cancel { background: none; border: none; color: var(--muted); text-decoration: underline; font-size: 12px; cursor: pointer; padding: 0; font-family: inherit; }
 
   /* CALENDAR */
   .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -353,27 +348,26 @@
   <!-- Strength Add -->
   <div class="page active" id="strength-add">
     <div class="form-card">
-      <h3>🎤 Голосовий ввід вправи</h3>
       <div class="date-row">
         <label>📅 Дата</label>
         <input type="date" id="sDate">
       </div>
-      <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎤</button>
-      <div class="voice-status" id="voiceStatus">Натисни мікрофон і скажи вправу</div>
-      <div class="voice-result" id="voiceResult"></div>
+      <div class="workout-timer" id="workoutTimer" style="display:none">
+        <div class="timer-value" id="timerValue">00:00</div>
+        <div class="timer-sub"><span id="timerSince"></span> · <button class="timer-cancel" onclick="cancelWorkout()">Скасувати</button></div>
+      </div>
+      <button class="btn btn-purple" id="startWorkoutBtn" onclick="startWorkout()">▶ Почати тренування</button>
     </div>
 
     <div class="form-card">
-      <h3>✏️ Або додай вручну</h3>
+      <h3>✏️ Вправа</h3>
       <div style="margin-bottom:10px">
         <input class="ex-input" id="exName" placeholder="Назва вправи (напр. Жим лежачи)" style="width:100%;margin-bottom:8px">
         <div id="setsContainer">
-          <div class="exercise-form" id="setRow0">
-            <input class="ex-input" placeholder="Повт." type="number" min="1" id="reps0">
-            <input class="ex-input" placeholder="Вага кг" type="number" step="0.5" id="weight0">
-            <button onclick="addSetRow()" style="background:var(--purple);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">+</button>
-          </div>
+          <div class="exercise-form" id="setRow0"><input class="ex-input" placeholder="Повт." type="number" inputmode="numeric" min="1" id="reps0" value=""><input class="ex-input" placeholder="Вага кг" type="number" inputmode="decimal" step="0.5" id="weight0" value=""></div>
         </div>
+        <button class="add-set-btn" onclick="addSetRow()">+ Підхід</button>
+        <div class="hold-hint">Щоб видалити підхід або вправу — затисни її</div>
       </div>
       <button class="btn btn-purple" onclick="saveExercise()">💪 Додати вправу</button>
     </div>
@@ -381,7 +375,7 @@
     <!-- Current workout preview -->
     <div id="currentWorkoutPreview"></div>
 
-    <button class="btn btn-green" onclick="saveWorkout()" id="saveWorkoutBtn" style="margin-top:12px">✅ Зберегти тренування</button>
+    <button class="btn btn-green" onclick="saveWorkout()" id="saveWorkoutBtn" style="margin-top:12px;display:none">🏁 Закінчити тренування</button>
   </div>
 
   <!-- Strength History -->
@@ -706,69 +700,114 @@ function showCDay(ds) {
 // ===== STRENGTH =====
 let currentExercises = []; // exercises in current session being built
 let editingWorkoutId = null; // id тренування, яке продовжуємо (null = нове)
+let workoutStartedAt = null; // мс, коли натиснуто «Почати тренування»
 let setRowCount = 1;
 
+function setRowHTML(i, reps, weight) {
+  const num = v => String(v == null ? '' : v).replace(/[^0-9.]/g, '');
+  return '<div class="exercise-form" id="setRow' + i + '">'
+    + '<input class="ex-input" placeholder="Повт." type="number" inputmode="numeric" min="1" id="reps' + i + '" value="' + num(reps) + '">'
+    + '<input class="ex-input" placeholder="Вага кг" type="number" inputmode="decimal" step="0.5" id="weight' + i + '" value="' + num(weight) + '">'
+    + '</div>';
+}
+
 function addSetRow() {
-  const c = document.getElementById('setsContainer');
-  const div = document.createElement('div');
-  div.className = 'exercise-form';
-  div.id = `setRow${setRowCount}`;
-  div.innerHTML = `
-    <input class="ex-input" placeholder="Повт." type="number" min="1" id="reps${setRowCount}">
-    <input class="ex-input" placeholder="Вага кг" type="number" step="0.5" id="weight${setRowCount}">
-    <button onclick="removeSetRow(${setRowCount})" style="background:var(--danger);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">−</button>`;
-  c.appendChild(div);
+  document.getElementById('setsContainer').insertAdjacentHTML('beforeend', setRowHTML(setRowCount));
   setRowCount++;
   saveDraft();
 }
 
-function removeSetRow(i) {
-  document.getElementById(`setRow${i}`).remove();
-  saveDraft();
+function resetExerciseForm() {
+  document.getElementById('exName').value = '';
+  document.getElementById('setsContainer').innerHTML = setRowHTML(0);
+  setRowCount = 1;
+}
+
+// Вправа, набрана у формі, але ще не додана кнопкою. null — форма порожня, false — помилка.
+function readPendingExercise(strict) {
+  const name = document.getElementById('exName').value.trim();
+  const sets = [];
+  document.querySelectorAll('#setsContainer .exercise-form').forEach(row => {
+    const reps = parseInt(row.querySelector('[id^="reps"]')?.value) || 0;
+    const weight = parseFloat(row.querySelector('[id^="weight"]')?.value) || 0;
+    if (reps > 0) sets.push({reps, weight});
+  });
+  if (!name && !sets.length) return null;
+  if (name.length < 2) { showToast('Введи назву вправи', true); document.getElementById('exName').focus(); return false; }
+  if (!sets.length) {
+    if (strict) { showToast('Додай хоч один підхід', true); return false; }
+    return null;
+  }
+  return {name, sets};
 }
 
 function saveExercise() {
-  let name = document.getElementById('exName').value.trim();
-  if(!name || name === 'Повторень кг' || name === 'Повт.' || name.length < 2){
-    showToast('Введи назву вправи',true);
-    document.getElementById('exName').focus();
-    return;
-  }
-  const sets = [];
-  document.querySelectorAll('#setsContainer .exercise-form').forEach((row,i)=>{
-    const repsEl = row.querySelector('[id^="reps"]');
-    const weightEl = row.querySelector('[id^="weight"]');
-    const reps = parseInt(repsEl?.value)||0;
-    const weight = parseFloat(weightEl?.value)||0;
-    if(reps>0) sets.push({reps, weight});
-  });
-  if(!sets.length){showToast('Додай хоч один підхід',true);return;}
-  currentExercises.push({name, sets});
+  const ex = readPendingExercise(true);
+  if (ex === null) { showToast('Введи назву вправи', true); document.getElementById('exName').focus(); return; }
+  if (!ex) return;
+  currentExercises.push(ex);
+  if (workoutStartedAt === null && editingWorkoutId === null) workoutStartedAt = Date.now();
+  resetExerciseForm();
   renderCurrentWorkout();
-  document.getElementById('exName').value='';
-  document.getElementById('setsContainer').innerHTML=`
-    <div class="exercise-form" id="setRow0">
-      <input class="ex-input" placeholder="Повт." type="number" min="1" id="reps0">
-      <input class="ex-input" placeholder="Вага кг" type="number" step="0.5" id="weight0">
-      <button onclick="addSetRow()" style="background:var(--purple);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">+</button>
-    </div>`;
-  setRowCount=1;
   saveDraft();
   showToast('Вправу додано!');
 }
 
-function renderCurrentWorkout() {
-  if(!currentExercises.length){
-    document.getElementById('currentWorkoutPreview').innerHTML='';
-    document.getElementById('saveWorkoutBtn').style.display='none';
-    return;
-  }
-  const sBtn = document.getElementById('saveWorkoutBtn');
-  sBtn.style.display='flex';
+// ── Почати / закінчити тренування
+let timerTick = null;
+function fmtDur(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000)), p = n => String(n).padStart(2, '0');
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
+  return (h ? h + ':' + p(m) : p(m)) + ':' + p(s % 60);
+}
+
+function renderWorkoutState() {
   const isEdit = editingWorkoutId !== null;
-  sBtn.textContent = isEdit ? '✅ Зберегти зміни' : '✅ Зберегти тренування';
+  const started = workoutStartedAt !== null && !isEdit;
+  const timer = document.getElementById('workoutTimer');
+  const startBtn = document.getElementById('startWorkoutBtn');
+  const finishBtn = document.getElementById('saveWorkoutBtn');
+  clearInterval(timerTick); timerTick = null;
+  timer.style.display = started ? 'block' : 'none';
+  startBtn.style.display = (started || isEdit) ? 'none' : 'flex';
+  if (started) {
+    const tick = () => { document.getElementById('timerValue').textContent = fmtDur(Date.now() - workoutStartedAt); };
+    tick(); timerTick = setInterval(tick, 1000);
+    document.getElementById('timerSince').textContent =
+      'Почато о ' + new Date(workoutStartedAt).toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
+  }
+  finishBtn.style.display = (currentExercises.length || started) ? 'flex' : 'none';
+  finishBtn.textContent = isEdit ? '✅ Зберегти зміни' : '🏁 Закінчити тренування';
+}
+
+function startWorkout() {
+  if (editingWorkoutId !== null) return;
+  workoutStartedAt = Date.now();
+  const sd = document.getElementById('sDate');
+  if (!sd.value) sd.value = todayStr();
+  renderWorkoutState();
+  saveDraft();
+  showToast('Тренування почалось 💪');
+}
+
+function cancelWorkout() {
+  const msg = currentExercises.length
+    ? 'Скасувати тренування? Додані вправи (' + currentExercises.length + ') НЕ збережуться.'
+    : 'Скасувати тренування?';
+  if (!confirm(msg)) return;
+  workoutStartedAt = null;
+  currentExercises = [];
+  resetExerciseForm();
+  renderCurrentWorkout();
+  saveDraft();
+  showToast('Скасовано');
+}
+
+function renderCurrentWorkout() {
+  const box = document.getElementById('currentWorkoutPreview');
+  if (!currentExercises.length) { box.innerHTML = ''; renderWorkoutState(); return; }
   let cwTitle = 'Поточне тренування', cwCancel = '';
-  if(isEdit){
+  if (editingWorkoutId !== null) {
     const ew = getStrength().find(x=>x.id===editingWorkoutId);
     const ed = ew ? new Date(ew.date+'T12:00:00').toLocaleDateString('uk-UA',{day:'numeric',month:'long'}) : '';
     cwTitle = 'Продовжуємо: ' + ed;
@@ -776,134 +815,90 @@ function renderCurrentWorkout() {
   }
   let html = '<div class="workout-card"><div class="workout-header"><div class="workout-title">'+cwTitle+'</div>'+cwCancel+'</div>';
   currentExercises.forEach((ex,i)=>{
-    html+=`<div class="exercise-block">
-      <div class="exercise-name">${ex.name} <button onclick="removeExercise(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;">✕</button></div>
+    html+=`<div class="exercise-block" data-i="${i}">
+      <div class="exercise-name">${ex.name}</div>
       <div class="sets-row">${ex.sets.map(s=>`<div class="set-badge">${s.reps}×${s.weight}кг</div>`).join('')}</div>
     </div>`;
   });
   html+='</div>';
-  document.getElementById('currentWorkoutPreview').innerHTML=html;
+  box.innerHTML = html;
+  renderWorkoutState();
+}
+
+// ── Видалення затисканням: випадковий дотик нічого не видаляє
+const HOLD_MS = 600;
+function bindHold(container, selector, onHold) {
+  let timer = null, el = null, x0 = 0, y0 = 0;
+  const stop = () => { clearTimeout(timer); timer = null; if (el) el.classList.remove('holding'); el = null; };
+  container.addEventListener('pointerdown', e => {
+    const t = e.target.closest(selector);
+    if (!t) return;
+    stop();
+    el = t; x0 = e.clientX; y0 = e.clientY;
+    el.classList.add('holding');
+    timer = setTimeout(() => { const hit = el; stop(); if (navigator.vibrate) navigator.vibrate(40); onHold(hit); }, HOLD_MS);
+  });
+  container.addEventListener('pointermove', e => { if (el && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) stop(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => container.addEventListener(ev, stop));
+  container.addEventListener('contextmenu', e => { if (e.target.closest(selector)) e.preventDefault(); });
+}
+
+function removeSetRowEl(row) {
+  const rows = document.querySelectorAll('#setsContainer .exercise-form');
+  if (rows.length <= 1) row.querySelectorAll('input').forEach(i => { i.value = ''; });
+  else row.remove();
+  saveDraft();
+  showToast('Підхід видалено');
 }
 
 function removeExercise(i) {
+  const ex = currentExercises[i];
+  if (!ex) return;
   currentExercises.splice(i,1);
   renderCurrentWorkout();
   saveDraft();
+  showToast('Вправу «' + ex.name + '» видалено');
 }
 
 function saveWorkout() {
+  // вправа, набрана у формі, але не додана кнопкою, теж іде в тренування
+  const pending = readPendingExercise(false);
+  if (pending === false) return;
+  if (pending) { currentExercises.push(pending); resetExerciseForm(); renderCurrentWorkout(); saveDraft(); }
   if(!currentExercises.length){showToast('Додай вправи',true);return;}
+  const isEdit = editingWorkoutId !== null;
+  const now = Date.now();
+  if (!isEdit) {
+    const sets = currentExercises.reduce((a,e)=>a+e.sets.length,0);
+    const dur = workoutStartedAt ? ', ' + Math.max(1, Math.round((now - workoutStartedAt)/60000)) + ' хв' : '';
+    const pl = (n, one, few, many) => n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
+    if (!confirm('Закінчити тренування?\n' + pl(currentExercises.length, 'вправа', 'вправи', 'вправ') + ', ' + pl(sets, 'підхід', 'підходи', 'підходів') + dur)) return;
+  }
   const date = document.getElementById('sDate').value||todayStr();
   const arr = getStrength();
-  const target = editingWorkoutId===null ? null : arr.find(x=>x.id===editingWorkoutId);
+  const target = isEdit ? arr.find(x=>x.id===editingWorkoutId) : null;
   if(target){
     target.exercises = [...currentExercises];
     target.date = date;
   } else {
-    arr.push({ id: Date.now(), date, exercises: [...currentExercises] });
+    const w = { id: now, date, exercises: [...currentExercises] };
+    if (workoutStartedAt) {
+      w.startedAt = workoutStartedAt;
+      w.endedAt = now;
+      w.duration_min = Math.max(1, Math.round((now - workoutStartedAt)/60000));
+    }
+    arr.push(w);
   }
   saveStrengthData(arr);
-  const wasEdit = !!target;
   editingWorkoutId = null;
+  workoutStartedAt = null;
   currentExercises=[];
   renderCurrentWorkout();
   document.getElementById('sDate').value=todayStr();
   saveDraft();
   renderStrengthHistory();
-  showToast(wasEdit ? '✅ Тренування оновлено!' : '✅ Тренування збережено!');
+  showToast(target ? '✅ Тренування оновлено!' : '✅ Тренування завершено!');
 }
-
-// VOICE
-let recognition = null;
-let isListening = false;
-
-function toggleVoice() {
-  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
-    showToast('Браузер не підтримує голос',true);return;
-  }
-  if(isListening){stopVoice();return;}
-  startVoice();
-}
-
-function startVoice() {
-  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
-  recognition = new SR();
-  recognition.lang='uk-UA';
-  recognition.continuous=false;
-  recognition.interimResults=false;
-  recognition.maxAlternatives=3;
-  recognition.onstart=()=>{
-    isListening=true;
-    document.getElementById('voiceBtn').classList.add('listening');
-    document.getElementById('voiceBtn').textContent='⏹';
-    document.getElementById('voiceStatus').textContent='Слухаю… говори вправу';
-  };
-  recognition.onresult=(e)=>{
-    const text=e.results[0][0].transcript;
-    document.getElementById('voiceResult').style.display='block';
-    document.getElementById('voiceResult').textContent='🎤 '+text;
-    parseVoiceInput(text);
-  };
-  recognition.onerror=()=>{showToast('Помилка мікрофона',true);stopVoice();};
-  recognition.onend=()=>stopVoice();
-  recognition.start();
-}
-
-function stopVoice() {
-  isListening=false;
-  if(recognition)recognition.abort();
-  document.getElementById('voiceBtn').classList.remove('listening');
-  document.getElementById('voiceBtn').textContent='🎤';
-  document.getElementById('voiceStatus').textContent='Натисни мікрофон і скажи вправу';
-}
-
-function parseVoiceInput(text) {
-  // Simple parser: extract numbers and exercise name
-  const t = text.toLowerCase();
-  const nums = t.match(/\d+([.,]\d+)?/g)||[];
-  let reps=0, weight=0, name=text;
-  if(nums.length>=2){
-    reps=parseInt(nums[0]);
-    weight=parseFloat(nums[1].replace(',','.'));
-  } else if(nums.length===1){
-    reps=parseInt(nums[0]);
-  }
-  // Try to find exercise name
-  const exNames=['жим лежачи','присідання','тяга','підтягування','молотки','біцепс','трицепс','плечі','прес','віджимання'];
-  let foundName='';
-  exNames.forEach(n=>{if(t.includes(n))foundName=n;});
-  if(!foundName) foundName=text.replace(/\d+([.,]\d+)?/g,'').trim()||text;
-
-  if(reps>0){
-    // Set exercise name
-    document.getElementById('exName').value = capitalize(foundName);
-    
-    // Find last empty row or add new one
-    const rows = document.querySelectorAll('#setsContainer .exercise-form');
-    const lastRow = rows[rows.length-1];
-    const lastRepsEl = lastRow.querySelector('[id^="reps"]');
-    const lastWeightEl = lastRow.querySelector('[id^="weight"]');
-    
-    if(lastRepsEl && lastRepsEl.value) {
-      // Last row already filled — add new row
-      addSetRow();
-      const newRows = document.querySelectorAll('#setsContainer .exercise-form');
-      const newRow = newRows[newRows.length-1];
-      newRow.querySelector('[id^="reps"]').value = reps;
-      if(weight>0) newRow.querySelector('[id^="weight"]').value = weight;
-    } else {
-      // Fill empty last row
-      lastRepsEl.value = reps;
-      if(weight>0) lastWeightEl.value = weight;
-    }
-    document.getElementById('voiceStatus').textContent='✅ Підхід додано! Говори наступний або натисни "Додати вправу"';
-  } else {
-    document.getElementById('exName').value = capitalize(text);
-    document.getElementById('voiceStatus').textContent='✅ Додай повтори і вагу';
-  }
-}
-
-function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 
 // Strength History
 let sPeriod='all';
@@ -938,7 +933,7 @@ function renderStrengthHistory() {
       <div class="workout-header">
         <div class="workout-title">${d.toLocaleDateString('uk-UA',{day:'numeric',month:'short'})}</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <div class="workout-date">${w.exercises.length} вправ</div>
+          <div class="workout-date">${w.exercises.length} вправ${w.duration_min ? ' · ' + w.duration_min + ' хв' : ''}</div>
           <button onclick="continueWorkout(${w.id})" style="background:var(--purple);color:#fff;border:none;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;white-space:nowrap">+ Дописати</button>
           <button class="session-delete" onclick="deleteWorkout(${w.id})">🗑</button>
         </div>
@@ -981,10 +976,11 @@ function editSet(wid, ei, si) {
 function continueWorkout(id){
   const w = getStrength().find(x=>x.id===id);
   if(!w){showToast('Тренування не знайдено',true);return;}
-  if(currentExercises.length && editingWorkoutId!==id){
+  if((currentExercises.length || workoutStartedAt!==null) && editingWorkoutId!==id){
     if(!confirm('Незбережене поточне тренування буде замінено. Продовжити?')) return;
   }
   editingWorkoutId = id;
+  workoutStartedAt = null;
   currentExercises = JSON.parse(JSON.stringify(w.exercises||[]));
   const sd = document.getElementById('sDate');
   if(sd) sd.value = w.date;
@@ -1118,16 +1114,7 @@ function renderSetRows(rows) {
   const c = document.getElementById('setsContainer');
   if (!c) return;
   if (!rows || !rows.length) rows = [{reps:'', weight:''}];
-  const num = v => String(v == null ? '' : v).replace(/[^0-9.]/g, '');
-  c.innerHTML = rows.map((r, i) => {
-    const btn = i === 0
-      ? '<button onclick="addSetRow()" style="background:var(--purple);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">+</button>'
-      : '<button onclick="removeSetRow(' + i + ')" style="background:var(--danger);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:18px;">−</button>';
-    return '<div class="exercise-form" id="setRow' + i + '">'
-      + '<input class="ex-input" placeholder="Повт." type="number" min="1" id="reps' + i + '" value="' + num(r.reps) + '">'
-      + '<input class="ex-input" placeholder="Вага кг" type="number" step="0.5" id="weight' + i + '" value="' + num(r.weight) + '">'
-      + btn + '</div>';
-  }).join('');
+  c.innerHTML = rows.map((r, i) => setRowHTML(i, r.reps, r.weight)).join('');
   setRowCount = rows.length;
 }
 
@@ -1136,6 +1123,7 @@ function saveDraft() {
     localStorage.setItem(D_KEY, JSON.stringify({
       exercises: currentExercises,
       editingWorkoutId,
+      workoutStartedAt,
       exName: dv('exName'),
       sDate: dv('sDate'),
       rows: readSetRows(),
@@ -1149,6 +1137,7 @@ function restoreDraft() {
   try { d = JSON.parse(localStorage.getItem(D_KEY) || '{}'); } catch { return; }
   if (!d || typeof d !== 'object') return;
   if (d.editingWorkoutId != null) editingWorkoutId = d.editingWorkoutId;
+  if (d.workoutStartedAt) workoutStartedAt = d.workoutStartedAt;
   if (Array.isArray(d.exercises) && d.exercises.length) {
     currentExercises = d.exercises;
     renderCurrentWorkout();
@@ -1169,6 +1158,9 @@ window.addEventListener('blur', saveDraft);
 initCCal();
 initSCal();
 restoreDraft();
+renderCurrentWorkout();
+bindHold(document.getElementById('setsContainer'), '.exercise-form', removeSetRowEl);
+bindHold(document.getElementById('currentWorkoutPreview'), '.exercise-block', el => removeExercise(+el.dataset.i));
 </script>
 </body>
 </html>
